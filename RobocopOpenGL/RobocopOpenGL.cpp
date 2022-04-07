@@ -11,9 +11,6 @@ string partsList[51] = { "head",
 "left_foot",
 "left_foot_toes",
 "right_upper_thigh",
-"holder3",
-"holder2",
-"holder1",
 "right_lower_thigh",
 "right_foot",
 "right_foot_toes",
@@ -64,16 +61,13 @@ float initialOffset[][3] = {
 	{-1.432, -9.653, 0.211}, //left_foot //changed
 	{-1.543, -10.489, -1.3}, //left_foot_toes //changed
 	{1.041, -0.919, 0.406}, //right_upper_thigh
-	{1.156, -0.847, 0.346}, //holder3 //10 index 
-	{1.137,-0.787,0.418}, //holder2
-	{1.245,-0.812,0.481}, //holder1 
-	{1.05,-5.564,-0.064}, //right_lower_thigh
+	{1.05,-5.564,-0.064}, //right_lower_thigh //10 index
 	{0.994,-9.684,0.211}, //right_foot
 	{1.212,-10.498,-1.3}, //right_foot_toes
 	{2.457,4.095,0.404 }, //right_upper_arm //changed
 	{2.999,1.417,0.308}, //right_lower_arm
 	{3.758,-1.598,0.203}, //right_palm
-	{3.506,-2.028,-0.345}, //right_thumb_1 //19 index
+	{3.506,-2.028,-0.345}, //right_thumb_1 //16 index
 	{3.437,-1.965,-0.81}, //right_thumb_2
 	{3.786,-2.61,-0.267}, //right_pointer_1
 	{3.888,-3.12,-0.254}, //right_pointer_2
@@ -86,11 +80,11 @@ float initialOffset[][3] = {
 	{3.955,-3.443,0.375}, //right_index_3
 	{3.871,-2.585,0.661}, //right_pinky_1 //changed
 	{3.91,-2.97,0.663}, //right_pinky_2
-	{3.919,-3.234,0.688}, //right_pinky_3 32
+	{3.919,-3.234,0.688}, //right_pinky_3 29
 	{-2.457,4.095,0.404}, //left_upper_arm
 	{-3.003,1.381,0.42}, //left_lower_arm
 	{-3.772,-1.634,0.315}, //left_parm
-	{-3.52,-2.063,-0.234}, //left_thumb_1 //36
+	{-3.52,-2.063,-0.234}, //left_thumb_1 //33
 	{-3.451,-2.001,-0.699}, //left_thumb_2
 	{-3.8,-2.646,-0.155}, //left_pointer_1
 	{-3.902,-3.156,-0.142}, //left_pointer_2
