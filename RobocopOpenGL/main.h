@@ -15,7 +15,8 @@ using namespace std;
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
 
-
+#define deg2rad(x) ((x)*((3.1415926f)/(180.0f)))
+#define rad2deg(x) ((180.0f) / ((x)*(3.1415926f)))
 
 #define PARTSNUM 50
 
@@ -117,6 +118,8 @@ GLuint uVBOs[PARTSNUM];
 GLuint nVBOs[PARTSNUM];
 GLuint program;
 int pNo;
+
+float rotateCentral = 0.f;
 
 float angles[PARTSNUM];
 float position = 0.0;

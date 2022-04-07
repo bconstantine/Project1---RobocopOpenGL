@@ -64,13 +64,13 @@ float initialOffset[][3] = {
 	{-1.432, -9.653, 0.182}, //left_foot
 	{-1.543, -10.489, -1.762}, //left_foot_toes
 	{1.041, -0.919, 0.406}, //right_upper_thigh
-	{1.156, 0.847, 0.346}, //holder3 //10 index
+	{1.156, -0.847, 0.346}, //holder3 //10 index //changed
 	{1.137,-0.787,0.418}, //holder2
-	{1.245,-0.812,0.481}, //holder1
+	{1.245,-0.812,0.481}, //holder1 
 	{1.05,-5.564,-0.064}, //right_lower_thigh
 	{0.994,-9.684,0.211}, //right_foot
 	{1.212,-10.498,-1.3}, //right_foot_toes
-	{2.443,4.31,0.292 }, //right_upper_arm
+	{2.457,4.095,0.404 }, //right_upper_arm //changed
 	{2.999,1.417,0.308}, //right_lower_arm
 	{3.758,-1.598,0.203}, //right_palm
 	{3.506,-2.028,-0.345}, //right_thumb_1 //19 index
@@ -84,7 +84,7 @@ float initialOffset[][3] = {
 	{3.884,-2.577,0.401}, //right_index_1
 	{3.938,-3.137,0.39}, //right_index_2
 	{3.955,-3.443,0.375}, //right_index_3
-	{3.871,2.585,0.661}, //right_pinky_1
+	{3.871,-2.585,0.661}, //right_pinky_1 //changed
 	{3.91,-2.97,0.663}, //right_pinky_2
 	{3.919,-3.234,0.688}, //right_pinky_3 32
 	{-2.457,4.095,0.404}, //left_upper_arm
@@ -105,6 +105,9 @@ float initialOffset[][3] = {
 	{-3.924,-3.006,0.775}, //left_pinky_3
 	{-3.933,-3.27,0.8} //left_pinky_3
 };
+
+float translatePart[PARTSNUM][3];
+float rotatePart[PARTSNUM][3];
 
 int handIndices(bool isRight, int fingerNumber, int fingerPart) {
 	//fingerNumber:
@@ -214,7 +217,12 @@ void idle(int dummy) {
 }
 void resetObj(int f) {
 	for (int i = 0; i < PARTSNUM; i++) {
-		angles[i] = 0.0f;
+		translatePart[i][0] = { 0 };
+		translatePart[i][1] = { 0 };
+		translatePart[i][2] = { 0 };
+		rotatePart[i][0] = { 0 };
+		rotatePart[i][1] = { 0 };
+		rotatePart[i][2] = { 0 };
 	}
 }
 void updateObj(int frame) {
@@ -270,8 +278,14 @@ GLuint M_KsID;
 void init() {
 	isFrame = false;
 	pNo = 0;
-	for (int i = 0; i < PARTSNUM; i++)//��l�ƨ��װ}�C
-		angles[i] = 0.0;
+	for (int i = 0; i < PARTSNUM; i++) {
+		translatePart[i][0] = { 0 };
+		translatePart[i][1] = { 0 };
+		translatePart[i][2] = { 0 };
+		rotatePart[i][0] = { 0 };
+		rotatePart[i][1] = { 0 };
+		rotatePart[i][2] = { 0 };
+	}
 
 	//VAO
 	glGenVertexArrays(1, &VAO);
@@ -323,6 +337,7 @@ void init() {
 
 #define DOR(angle) (angle*3.1415/180);
 void display() {
+	glClearColor(0.7, 0.7, 0.7, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
 	glBindVertexArray(VAO);
@@ -466,6 +481,7 @@ void Obj2Buffer() {
 	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 }
 
+
 void myUpdateModel() {
 	//reset state
 	for (int i = 0; i < PARTSNUM; i++) {
@@ -475,6 +491,7 @@ void myUpdateModel() {
 
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
+		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
 		Models[i] = translate(Models[i], vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
 	}
 }
@@ -676,6 +693,12 @@ mat4 rotate(float angle, float x, float y, float z) {
 }
 void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
+	case 'g':
+		rotateCentral += 1;
+		break;
+	case 'h': 
+		rotateCentral -= 1;
+		break;
 	case '1':
 		angleMain += 5;
 		if (angleMain >= 360) angleMain = 0;
