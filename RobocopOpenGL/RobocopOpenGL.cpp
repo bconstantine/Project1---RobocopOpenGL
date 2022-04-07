@@ -60,7 +60,7 @@ float initialOffset[][3] = {
 	{-1.358, -5.544, -0.064}, //left_lower_thigh //changed
 	{-1.432, -9.653, 0.211}, //left_foot //changed
 	{-1.543, -10.489, -1.3}, //left_foot_toes //changed
-	{1.041, -0.919, 0.406}, //right_upper_thigh
+	{1.183, -0.789, 0.339}, //right_upper_thigh
 	{1.05,-5.564,-0.064}, //right_lower_thigh //10 index
 	{0.994,-9.684,0.211}, //right_foot
 	{1.212,-10.498,-1.3}, //right_foot_toes
