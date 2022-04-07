@@ -482,6 +482,242 @@ void myUpdateModel() {
 		Models[i] = mat4(1.0f);
 	}
 
+	//Body
+	Models[BODY] = translate(Models[BODY], vec3(translatePart[BODY][0], translatePart[BODY][1], translatePart[BODY][2]));
+	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][2], vec3(0, 0, 1));
+	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][1], vec3(0, 1, 0));
+	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][0], vec3(1, 0, 0));
+		//Abs
+		Models[ABS] = translate(Models[BODY], vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][2], vec3(0, 0, 1));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][1], vec3(0, 1, 0));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][0], vec3(1, 0, 0));
+			//Upper Body
+			Models[UPPER_BODY] = translate(Models[ABS], vec3(translatePart[UPPER_BODY][0], translatePart[UPPER_BODY][1], translatePart[UPPER_BODY][2]));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][2], vec3(0, 0, 1));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][1], vec3(0, 1, 0));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][0], vec3(1, 0, 0));
+				//Neck
+				Models[NECK] = translate(Models[ABS], vec3(translatePart[NECK][0], translatePart[NECK][1], translatePart[NECK][2]));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][2], vec3(0, 0, 1));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][1], vec3(0, 1, 0));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][0], vec3(1, 0, 0));
+					//Head
+					Models[HEAD] = translate(Models[NECK], vec3(translatePart[HEAD][0], translatePart[HEAD][1], translatePart[HEAD][2]));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][2], vec3(0, 0, 1));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][1], vec3(0, 1, 0));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][0], vec3(1, 0, 0));
+				//Right_Upper_arm
+				Models[RIGHT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][2], vec3(0, 0, 1));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], vec3(0, 1, 0));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], vec3(1, 0, 0));
+					//Right_Lower_arm
+					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(translatePart[RIGHT_LOWER_ARM][0], translatePart[RIGHT_LOWER_ARM][1], translatePart[RIGHT_LOWER_ARM][2]));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], vec3(1, 0, 0));
+						//Right_Palm
+						Models[RIGHT_PALM] = translate(Models[RIGHT_LOWER_ARM], vec3(translatePart[RIGHT_PALM][0], translatePart[RIGHT_PALM][1], translatePart[RIGHT_PALM][2]));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][2], vec3(0, 0, 1));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][1], vec3(0, 1, 0));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][0], vec3(1, 0, 0));
+							//Right_thumb_1
+							Models[RIGHT_THUMB_1] = translate(Models[RIGHT_PALM], vec3(translatePart[RIGHT_THUMB_1][0], translatePart[RIGHT_THUMB_1][1], translatePart[RIGHT_THUMB_1][2]));
+							Models[RIGHT_THUMB_1] = rotate(Models[RIGHT_THUMB_1], rotatePart[RIGHT_THUMB_1][2], vec3(0, 0, 1));
+							Models[RIGHT_THUMB_1] = rotate(Models[RIGHT_THUMB_1], rotatePart[RIGHT_THUMB_1][1], vec3(0, 1, 0));
+							Models[RIGHT_THUMB_1] = rotate(Models[RIGHT_THUMB_1], rotatePart[RIGHT_THUMB_1][0], vec3(1, 0, 0));
+								//Right_thumb_2
+								Models[RIGHT_THUMB_2] = translate(Models[RIGHT_THUMB_1], vec3(translatePart[RIGHT_THUMB_2][0], translatePart[RIGHT_THUMB_2][1], translatePart[RIGHT_THUMB_2][2]));
+								Models[RIGHT_THUMB_2] = rotate(Models[RIGHT_THUMB_2], rotatePart[RIGHT_THUMB_2][2], vec3(0, 0, 1));
+								Models[RIGHT_THUMB_2] = rotate(Models[RIGHT_THUMB_2], rotatePart[RIGHT_THUMB_2][1], vec3(0, 1, 0));
+								Models[RIGHT_THUMB_2] = rotate(Models[RIGHT_THUMB_2], rotatePart[RIGHT_THUMB_2][0], vec3(1, 0, 0));
+							//RIGHT_POINTER_1
+							Models[RIGHT_POINTER_1] = translate(Models[RIGHT_PALM], vec3(translatePart[RIGHT_POINTER_1][0], translatePart[RIGHT_POINTER_1][1], translatePart[RIGHT_POINTER_1][2]));
+							Models[RIGHT_POINTER_1] = rotate(Models[RIGHT_POINTER_1], rotatePart[RIGHT_POINTER_1][2], vec3(0, 0, 1));
+							Models[RIGHT_POINTER_1] = rotate(Models[RIGHT_POINTER_1], rotatePart[RIGHT_POINTER_1][1], vec3(0, 1, 0));
+							Models[RIGHT_POINTER_1] = rotate(Models[RIGHT_POINTER_1], rotatePart[RIGHT_POINTER_1][0], vec3(1, 0, 0));
+								//Right_POINTER_2
+								Models[RIGHT_POINTER_2] = translate(Models[RIGHT_POINTER_1], vec3(translatePart[RIGHT_POINTER_2][0], translatePart[RIGHT_POINTER_2][1], translatePart[RIGHT_POINTER_2][2]));
+								Models[RIGHT_POINTER_2] = rotate(Models[RIGHT_POINTER_2], rotatePart[RIGHT_POINTER_2][2], vec3(0, 0, 1));
+								Models[RIGHT_POINTER_2] = rotate(Models[RIGHT_POINTER_2], rotatePart[RIGHT_POINTER_2][1], vec3(0, 1, 0));
+								Models[RIGHT_POINTER_2] = rotate(Models[RIGHT_POINTER_2], rotatePart[RIGHT_POINTER_2][0], vec3(1, 0, 0));
+									//Right_pointer_3
+									Models[RIGHT_POINTER_3] = translate(Models[RIGHT_POINTER_2], vec3(translatePart[RIGHT_POINTER_3][0], translatePart[RIGHT_POINTER_3][1], translatePart[RIGHT_POINTER_3][2]));
+									Models[RIGHT_POINTER_3] = rotate(Models[RIGHT_POINTER_3], rotatePart[RIGHT_POINTER_3][2], vec3(0, 0, 1));
+									Models[RIGHT_POINTER_3] = rotate(Models[RIGHT_POINTER_3], rotatePart[RIGHT_POINTER_3][1], vec3(0, 1, 0));
+									Models[RIGHT_POINTER_3] = rotate(Models[RIGHT_POINTER_3], rotatePart[RIGHT_POINTER_3][0], vec3(1, 0, 0));
+							//RIGHT_MIDDLE_1
+							Models[RIGHT_MIDDLE_1] = translate(Models[RIGHT_PALM], vec3(translatePart[RIGHT_MIDDLE_1][0], translatePart[RIGHT_MIDDLE_1][1], translatePart[RIGHT_MIDDLE_1][2]));
+							Models[RIGHT_MIDDLE_1] = rotate(Models[RIGHT_MIDDLE_1], rotatePart[RIGHT_MIDDLE_1][2], vec3(0, 0, 1));
+							Models[RIGHT_MIDDLE_1] = rotate(Models[RIGHT_MIDDLE_1], rotatePart[RIGHT_MIDDLE_1][1], vec3(0, 1, 0));
+							Models[RIGHT_MIDDLE_1] = rotate(Models[RIGHT_MIDDLE_1], rotatePart[RIGHT_MIDDLE_1][0], vec3(1, 0, 0));
+								//RIGHT_MIDDLE_2
+								Models[RIGHT_MIDDLE_2] = translate(Models[RIGHT_MIDDLE_1], vec3(translatePart[RIGHT_MIDDLE_2][0], translatePart[RIGHT_MIDDLE_2][1], translatePart[RIGHT_MIDDLE_2][2]));
+								Models[RIGHT_MIDDLE_2] = rotate(Models[RIGHT_MIDDLE_2], rotatePart[RIGHT_MIDDLE_2][2], vec3(0, 0, 1));
+								Models[RIGHT_MIDDLE_2] = rotate(Models[RIGHT_MIDDLE_2], rotatePart[RIGHT_MIDDLE_2][1], vec3(0, 1, 0));
+								Models[RIGHT_MIDDLE_2] = rotate(Models[RIGHT_MIDDLE_2], rotatePart[RIGHT_MIDDLE_2][0], vec3(1, 0, 0));
+									//RIGHT_MIDDLE_3
+									Models[RIGHT_MIDDLE_3] = translate(Models[RIGHT_MIDDLE_2], vec3(translatePart[RIGHT_MIDDLE_3][0], translatePart[RIGHT_MIDDLE_3][1], translatePart[RIGHT_MIDDLE_3][2]));
+									Models[RIGHT_MIDDLE_3] = rotate(Models[RIGHT_MIDDLE_3], rotatePart[RIGHT_MIDDLE_3][2], vec3(0, 0, 1));
+									Models[RIGHT_MIDDLE_3] = rotate(Models[RIGHT_MIDDLE_3], rotatePart[RIGHT_MIDDLE_3][1], vec3(0, 1, 0));
+									Models[RIGHT_MIDDLE_3] = rotate(Models[RIGHT_MIDDLE_3], rotatePart[RIGHT_MIDDLE_3][0], vec3(1, 0, 0));
+							//Right_Index_1
+							Models[RIGHT_INDEX_1] = translate(Models[RIGHT_PALM], vec3(translatePart[RIGHT_INDEX_1][0], translatePart[RIGHT_INDEX_1][1], translatePart[RIGHT_INDEX_1][2]));
+							Models[RIGHT_INDEX_1] = rotate(Models[RIGHT_INDEX_1], rotatePart[RIGHT_INDEX_1][2], vec3(0, 0, 1));
+							Models[RIGHT_INDEX_1] = rotate(Models[RIGHT_INDEX_1], rotatePart[RIGHT_INDEX_1][1], vec3(0, 1, 0));
+							Models[RIGHT_INDEX_1] = rotate(Models[RIGHT_INDEX_1], rotatePart[RIGHT_INDEX_1][0], vec3(1, 0, 0));
+								//RIGHT_INDEX_2
+								Models[RIGHT_INDEX_2] = translate(Models[RIGHT_INDEX_1], vec3(translatePart[RIGHT_INDEX_2][0], translatePart[RIGHT_INDEX_2][1], translatePart[RIGHT_INDEX_2][2]));
+								Models[RIGHT_INDEX_2] = rotate(Models[RIGHT_INDEX_2], rotatePart[RIGHT_INDEX_2][2], vec3(0, 0, 1));
+								Models[RIGHT_INDEX_2] = rotate(Models[RIGHT_INDEX_2], rotatePart[RIGHT_INDEX_2][1], vec3(0, 1, 0));
+								Models[RIGHT_INDEX_2] = rotate(Models[RIGHT_INDEX_2], rotatePart[RIGHT_INDEX_2][0], vec3(1, 0, 0));
+									//RIGHT_INDEX_3
+									Models[RIGHT_INDEX_3] = translate(Models[RIGHT_INDEX_2], vec3(translatePart[RIGHT_INDEX_3][0], translatePart[RIGHT_INDEX_3][1], translatePart[RIGHT_INDEX_3][2]));
+									Models[RIGHT_INDEX_3] = rotate(Models[RIGHT_INDEX_3], rotatePart[RIGHT_INDEX_3][2], vec3(0, 0, 1));
+									Models[RIGHT_INDEX_3] = rotate(Models[RIGHT_INDEX_3], rotatePart[RIGHT_INDEX_3][1], vec3(0, 1, 0));
+									Models[RIGHT_INDEX_3] = rotate(Models[RIGHT_INDEX_3], rotatePart[RIGHT_INDEX_3][0], vec3(1, 0, 0));
+							//RIGHT_PINKY_1
+							Models[RIGHT_PINKY_1] = translate(Models[RIGHT_PALM], vec3(translatePart[RIGHT_PINKY_1][0], translatePart[RIGHT_PINKY_1][1], translatePart[RIGHT_PINKY_1][2]));
+							Models[RIGHT_PINKY_1] = rotate(Models[RIGHT_PINKY_1], rotatePart[RIGHT_PINKY_1][2], vec3(0, 0, 1));
+							Models[RIGHT_PINKY_1] = rotate(Models[RIGHT_PINKY_1], rotatePart[RIGHT_PINKY_1][1], vec3(0, 1, 0));
+							Models[RIGHT_PINKY_1] = rotate(Models[RIGHT_PINKY_1], rotatePart[RIGHT_PINKY_1][0], vec3(1, 0, 0));
+								//RIGHT_PINKY_2
+								Models[RIGHT_PINKY_2] = translate(Models[RIGHT_PINKY_1], vec3(translatePart[RIGHT_PINKY_2][0], translatePart[RIGHT_PINKY_2][1], translatePart[RIGHT_PINKY_2][2]));
+								Models[RIGHT_PINKY_2] = rotate(Models[RIGHT_PINKY_2], rotatePart[RIGHT_PINKY_2][2], vec3(0, 0, 1));
+								Models[RIGHT_PINKY_2] = rotate(Models[RIGHT_PINKY_2], rotatePart[RIGHT_PINKY_2][1], vec3(0, 1, 0));
+								Models[RIGHT_PINKY_2] = rotate(Models[RIGHT_PINKY_2], rotatePart[RIGHT_PINKY_2][0], vec3(1, 0, 0));
+									//RIGHT_PINKY_3
+									Models[RIGHT_PINKY_3] = translate(Models[RIGHT_PINKY_2], vec3(translatePart[RIGHT_PINKY_3][0], translatePart[RIGHT_PINKY_3][1], translatePart[RIGHT_PINKY_3][2]));
+									Models[RIGHT_PINKY_3] = rotate(Models[RIGHT_PINKY_3], rotatePart[RIGHT_PINKY_3][2], vec3(0, 0, 1));
+									Models[RIGHT_PINKY_3] = rotate(Models[RIGHT_PINKY_3], rotatePart[RIGHT_PINKY_3][1], vec3(0, 1, 0));
+									Models[RIGHT_INDEX_3] = rotate(Models[RIGHT_INDEX_3], rotatePart[RIGHT_INDEX_3][0], vec3(1, 0, 0));
+				//LEFT_Upper_arm
+				Models[LEFT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[LEFT_UPPER_ARM][0], translatePart[LEFT_UPPER_ARM][1], translatePart[LEFT_UPPER_ARM][2]));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][2], vec3(0, 0, 1));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][1], vec3(0, 1, 0));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][0], vec3(1, 0, 0));
+					//LEFT_Lower_arm
+					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(translatePart[LEFT_LOWER_ARM][0], translatePart[LEFT_LOWER_ARM][1], translatePart[LEFT_LOWER_ARM][2]));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], vec3(1, 0, 0));
+						//LEFT_Palm
+						Models[LEFT_PALM] = translate(Models[LEFT_LOWER_ARM], vec3(translatePart[LEFT_PALM][0], translatePart[LEFT_PALM][1], translatePart[LEFT_PALM][2]));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][2], vec3(0, 0, 1));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][1], vec3(0, 1, 0));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][0], vec3(1, 0, 0));
+							//LEFT_thumb_1
+							Models[LEFT_THUMB_1] = translate(Models[LEFT_PALM], vec3(translatePart[LEFT_THUMB_1][0], translatePart[LEFT_THUMB_1][1], translatePart[LEFT_THUMB_1][2]));
+							Models[LEFT_THUMB_1] = rotate(Models[LEFT_THUMB_1], rotatePart[LEFT_THUMB_1][2], vec3(0, 0, 1));
+							Models[LEFT_THUMB_1] = rotate(Models[LEFT_THUMB_1], rotatePart[LEFT_THUMB_1][1], vec3(0, 1, 0));
+							Models[LEFT_THUMB_1] = rotate(Models[LEFT_THUMB_1], rotatePart[LEFT_THUMB_1][0], vec3(1, 0, 0));
+								//LEFT_thumb_2
+								Models[LEFT_THUMB_2] = translate(Models[LEFT_THUMB_1], vec3(translatePart[LEFT_THUMB_2][0], translatePart[LEFT_THUMB_2][1], translatePart[LEFT_THUMB_2][2]));
+								Models[LEFT_THUMB_2] = rotate(Models[LEFT_THUMB_2], rotatePart[LEFT_THUMB_2][2], vec3(0, 0, 1));
+								Models[LEFT_THUMB_2] = rotate(Models[LEFT_THUMB_2], rotatePart[LEFT_THUMB_2][1], vec3(0, 1, 0));
+								Models[LEFT_THUMB_2] = rotate(Models[LEFT_THUMB_2], rotatePart[LEFT_THUMB_2][0], vec3(1, 0, 0));
+							//LEFT_POINTER_1
+							Models[LEFT_POINTER_1] = translate(Models[LEFT_PALM], vec3(translatePart[LEFT_POINTER_1][0], translatePart[LEFT_POINTER_1][1], translatePart[LEFT_POINTER_1][2]));
+							Models[LEFT_POINTER_1] = rotate(Models[LEFT_POINTER_1], rotatePart[LEFT_POINTER_1][2], vec3(0, 0, 1));
+							Models[LEFT_POINTER_1] = rotate(Models[LEFT_POINTER_1], rotatePart[LEFT_POINTER_1][1], vec3(0, 1, 0));
+							Models[LEFT_POINTER_1] = rotate(Models[LEFT_POINTER_1], rotatePart[LEFT_POINTER_1][0], vec3(1, 0, 0));
+								//LEFT_POINTER_2
+								Models[LEFT_POINTER_2] = translate(Models[LEFT_POINTER_1], vec3(translatePart[LEFT_POINTER_2][0], translatePart[LEFT_POINTER_2][1], translatePart[LEFT_POINTER_2][2]));
+								Models[LEFT_POINTER_2] = rotate(Models[LEFT_POINTER_2], rotatePart[LEFT_POINTER_2][2], vec3(0, 0, 1));
+								Models[LEFT_POINTER_2] = rotate(Models[LEFT_POINTER_2], rotatePart[LEFT_POINTER_2][1], vec3(0, 1, 0));
+								Models[LEFT_POINTER_2] = rotate(Models[LEFT_POINTER_2], rotatePart[LEFT_POINTER_2][0], vec3(1, 0, 0));
+									//LEFT_pointer_3
+									Models[LEFT_POINTER_3] = translate(Models[LEFT_POINTER_2], vec3(translatePart[LEFT_POINTER_3][0], translatePart[LEFT_POINTER_3][1], translatePart[LEFT_POINTER_3][2]));
+									Models[LEFT_POINTER_3] = rotate(Models[LEFT_POINTER_3], rotatePart[LEFT_POINTER_3][2], vec3(0, 0, 1));
+									Models[LEFT_POINTER_3] = rotate(Models[LEFT_POINTER_3], rotatePart[LEFT_POINTER_3][1], vec3(0, 1, 0));
+									Models[LEFT_POINTER_3] = rotate(Models[LEFT_POINTER_3], rotatePart[LEFT_POINTER_3][0], vec3(1, 0, 0));
+							//LEFT_MIDDLE_1
+							Models[LEFT_MIDDLE_1] = translate(Models[LEFT_PALM], vec3(translatePart[LEFT_MIDDLE_1][0], translatePart[LEFT_MIDDLE_1][1], translatePart[LEFT_MIDDLE_1][2]));
+							Models[LEFT_MIDDLE_1] = rotate(Models[LEFT_MIDDLE_1], rotatePart[LEFT_MIDDLE_1][2], vec3(0, 0, 1));
+							Models[LEFT_MIDDLE_1] = rotate(Models[LEFT_MIDDLE_1], rotatePart[LEFT_MIDDLE_1][1], vec3(0, 1, 0));
+							Models[LEFT_MIDDLE_1] = rotate(Models[LEFT_MIDDLE_1], rotatePart[LEFT_MIDDLE_1][0], vec3(1, 0, 0));
+								//LEFT_MIDDLE_2
+								Models[LEFT_MIDDLE_2] = translate(Models[LEFT_MIDDLE_1], vec3(translatePart[LEFT_MIDDLE_2][0], translatePart[LEFT_MIDDLE_2][1], translatePart[LEFT_MIDDLE_2][2]));
+								Models[LEFT_MIDDLE_2] = rotate(Models[LEFT_MIDDLE_2], rotatePart[LEFT_MIDDLE_2][2], vec3(0, 0, 1));
+								Models[LEFT_MIDDLE_2] = rotate(Models[LEFT_MIDDLE_2], rotatePart[LEFT_MIDDLE_2][1], vec3(0, 1, 0));
+								Models[LEFT_MIDDLE_2] = rotate(Models[LEFT_MIDDLE_2], rotatePart[LEFT_MIDDLE_2][0], vec3(1, 0, 0));
+									//LEFT_MIDDLE_3
+									Models[LEFT_MIDDLE_3] = translate(Models[LEFT_MIDDLE_2], vec3(translatePart[LEFT_MIDDLE_3][0], translatePart[LEFT_MIDDLE_3][1], translatePart[LEFT_MIDDLE_3][2]));
+									Models[LEFT_MIDDLE_3] = rotate(Models[LEFT_MIDDLE_3], rotatePart[LEFT_MIDDLE_3][2], vec3(0, 0, 1));
+									Models[LEFT_MIDDLE_3] = rotate(Models[LEFT_MIDDLE_3], rotatePart[LEFT_MIDDLE_3][1], vec3(0, 1, 0));
+									Models[LEFT_MIDDLE_3] = rotate(Models[LEFT_MIDDLE_3], rotatePart[LEFT_MIDDLE_3][0], vec3(1, 0, 0));
+							//LEFT_Index_1
+							Models[LEFT_INDEX_1] = translate(Models[LEFT_PALM], vec3(translatePart[LEFT_INDEX_1][0], translatePart[LEFT_INDEX_1][1], translatePart[LEFT_INDEX_1][2]));
+							Models[LEFT_INDEX_1] = rotate(Models[LEFT_INDEX_1], rotatePart[LEFT_INDEX_1][2], vec3(0, 0, 1));
+							Models[LEFT_INDEX_1] = rotate(Models[LEFT_INDEX_1], rotatePart[LEFT_INDEX_1][1], vec3(0, 1, 0));
+							Models[LEFT_INDEX_1] = rotate(Models[LEFT_INDEX_1], rotatePart[LEFT_INDEX_1][0], vec3(1, 0, 0));
+								//LEFT_INDEX_2
+								Models[LEFT_INDEX_2] = translate(Models[LEFT_INDEX_1], vec3(translatePart[LEFT_INDEX_2][0], translatePart[LEFT_INDEX_2][1], translatePart[LEFT_INDEX_2][2]));
+								Models[LEFT_INDEX_2] = rotate(Models[LEFT_INDEX_2], rotatePart[LEFT_INDEX_2][2], vec3(0, 0, 1));
+								Models[LEFT_INDEX_2] = rotate(Models[LEFT_INDEX_2], rotatePart[LEFT_INDEX_2][1], vec3(0, 1, 0));
+								Models[LEFT_INDEX_2] = rotate(Models[LEFT_INDEX_2], rotatePart[LEFT_INDEX_2][0], vec3(1, 0, 0));
+									//LEFT_INDEX_3
+									Models[LEFT_INDEX_3] = translate(Models[LEFT_INDEX_2], vec3(translatePart[LEFT_INDEX_3][0], translatePart[LEFT_INDEX_3][1], translatePart[LEFT_INDEX_3][2]));
+									Models[LEFT_INDEX_3] = rotate(Models[LEFT_INDEX_3], rotatePart[LEFT_INDEX_3][2], vec3(0, 0, 1));
+									Models[LEFT_INDEX_3] = rotate(Models[LEFT_INDEX_3], rotatePart[LEFT_INDEX_3][1], vec3(0, 1, 0));
+									Models[LEFT_INDEX_3] = rotate(Models[LEFT_INDEX_3], rotatePart[LEFT_INDEX_3][0], vec3(1, 0, 0));
+							//LEFT_PINKY_1
+							Models[LEFT_PINKY_1] = translate(Models[LEFT_PALM], vec3(translatePart[LEFT_PINKY_1][0], translatePart[LEFT_PINKY_1][1], translatePart[LEFT_PINKY_1][2]));
+							Models[LEFT_PINKY_1] = rotate(Models[LEFT_PINKY_1], rotatePart[LEFT_PINKY_1][2], vec3(0, 0, 1));
+							Models[LEFT_PINKY_1] = rotate(Models[LEFT_PINKY_1], rotatePart[LEFT_PINKY_1][1], vec3(0, 1, 0));
+							Models[LEFT_PINKY_1] = rotate(Models[LEFT_PINKY_1], rotatePart[LEFT_PINKY_1][0], vec3(1, 0, 0));
+								//LEFT_PINKY_2
+								Models[LEFT_PINKY_2] = translate(Models[LEFT_PINKY_1], vec3(translatePart[LEFT_PINKY_2][0], translatePart[LEFT_PINKY_2][1], translatePart[LEFT_PINKY_2][2]));
+								Models[LEFT_PINKY_2] = rotate(Models[LEFT_PINKY_2], rotatePart[LEFT_PINKY_2][2], vec3(0, 0, 1));
+								Models[LEFT_PINKY_2] = rotate(Models[LEFT_PINKY_2], rotatePart[LEFT_PINKY_2][1], vec3(0, 1, 0));
+								Models[LEFT_PINKY_2] = rotate(Models[LEFT_PINKY_2], rotatePart[LEFT_PINKY_2][0], vec3(1, 0, 0));
+									//LEFT_PINKY_3
+									Models[LEFT_PINKY_3] = translate(Models[LEFT_PINKY_2], vec3(translatePart[LEFT_PINKY_3][0], translatePart[LEFT_PINKY_3][1], translatePart[LEFT_PINKY_3][2]));
+									Models[LEFT_PINKY_3] = rotate(Models[LEFT_PINKY_3], rotatePart[LEFT_PINKY_3][2], vec3(0, 0, 1));
+									Models[LEFT_PINKY_3] = rotate(Models[LEFT_PINKY_3], rotatePart[LEFT_PINKY_3][1], vec3(0, 1, 0));
+									Models[LEFT_INDEX_3] = rotate(Models[LEFT_INDEX_3], rotatePart[LEFT_INDEX_3][0], vec3(1, 0, 0));
+		//Left_Upper_thigh
+		Models[LEFT_UPPER_THIGH] = translate(Models[BODY], vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][2], vec3(0, 0, 1));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][1], vec3(0, 1, 0));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][0], vec3(1, 0, 0));
+			//LEFT_lower_thigh
+			Models[LEFT_LOWER_THIGH] = translate(Models[LEFT_UPPER_THIGH], vec3(translatePart[LEFT_LOWER_THIGH][0], translatePart[LEFT_LOWER_THIGH][1], translatePart[LEFT_LOWER_THIGH][2]));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][2], vec3(0, 0, 1));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][1], vec3(0, 1, 0));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][0], vec3(1, 0, 0));
+				//LEFT_foot
+				Models[LEFT_FOOT] = translate(Models[LEFT_LOWER_THIGH], vec3(translatePart[LEFT_FOOT][0], translatePart[LEFT_FOOT][1], translatePart[LEFT_FOOT][2]));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][2], vec3(0, 0, 1));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][1], vec3(0, 1, 0));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][0], vec3(1, 0, 0));
+					//LEFT_foot_toes
+					Models[LEFT_FOOT_TOES] = translate(Models[LEFT_FOOT], vec3(translatePart[LEFT_FOOT_TOES][0], translatePart[LEFT_FOOT_TOES][1], translatePart[LEFT_FOOT_TOES][2]));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][2], vec3(0, 0, 1));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][1], vec3(0, 1, 0));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][0], vec3(1, 0, 0));
+		//right_upper_thigh
+		Models[RIGHT_UPPER_THIGH] = translate(Models[BODY], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], vec3(0, 0, 1));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
+			//Right_lower_thigh
+			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(translatePart[RIGHT_LOWER_THIGH][0], translatePart[RIGHT_LOWER_THIGH][1], translatePart[RIGHT_LOWER_THIGH][2]));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][2], vec3(0, 0, 1));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], vec3(0, 1, 0));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], vec3(1, 0, 0));
+				//Right_foot
+				Models[RIGHT_FOOT] = translate(Models[RIGHT_LOWER_THIGH], vec3(translatePart[RIGHT_FOOT][0], translatePart[RIGHT_FOOT][1], translatePart[RIGHT_FOOT][2]));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][2], vec3(0, 0, 1));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], vec3(0, 1, 0));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], vec3(1, 0, 0));
+					//Right_foot_toes
+					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT], vec3(translatePart[RIGHT_FOOT_TOES][0], translatePart[RIGHT_FOOT_TOES][1], translatePart[RIGHT_FOOT_TOES][2]));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
+
 
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
