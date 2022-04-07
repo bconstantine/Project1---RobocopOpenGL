@@ -59,12 +59,12 @@ float initialOffset[][3] = {
 	{0,2.3932, 0}, //upper_body
 	{0,1.245, 0.085}, //abs
 	{0,0,0}, //crotch
-	{-1.288, -0.735, 0.172}, //left_upper_thigh 
-	{-1.358, -5.544, -0.313}, //left_lower_thigh
-	{-1.432, -9.653, 0.182}, //left_foot
-	{-1.543, -10.489, -1.762}, //left_foot_toes
+	{-1.288, -0.735, 0.172}, //left_upper_thigh //changed
+	{-1.358, -5.544, -0.064}, //left_lower_thigh //changed
+	{-1.432, -9.653, 0.211}, //left_foot //changed
+	{-1.543, -10.489, -1.3}, //left_foot_toes //changed
 	{1.041, -0.919, 0.406}, //right_upper_thigh
-	{1.156, -0.847, 0.346}, //holder3 //10 index //changed
+	{1.156, -0.847, 0.346}, //holder3 //10 index 
 	{1.137,-0.787,0.418}, //holder2
 	{1.245,-0.812,0.481}, //holder1 
 	{1.05,-5.564,-0.064}, //right_lower_thigh
