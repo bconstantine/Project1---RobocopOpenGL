@@ -97,21 +97,21 @@ void idle(int dummy) {
 		if (out > 12) out = 1;
 	}
 	else if (action == IDLE) {
-		resetObj(dummy);
+		resetModel(dummy);
 		out = 0;
 	}
 	glutPostRedisplay();
 
 	glutTimerFunc(150, idle, out);
 }
-void resetObj(int f) {
+void resetModel(int f) {
 	for (int i = 0; i < PARTSNUM; i++) {
-		translatePart[i][0] = { 0 };
-		translatePart[i][1] = { 0 };
-		translatePart[i][2] = { 0 };
-		rotatePart[i][0] = { 0 };
-		rotatePart[i][1] = { 0 };
-		rotatePart[i][2] = { 0 };
+		translatePart[i][0] = 0;
+		translatePart[i][1] = 0;
+		translatePart[i][2] = 0;
+		rotatePart[i][0] = 0 ;
+		rotatePart[i][1] = 0 ;
+		rotatePart[i][2] = 0;
 	}
 }
 void updateObj(int frame) {
@@ -165,6 +165,11 @@ GLuint M_KdID;
 GLuint M_KsID;
 
 void init() {
+	resetModel(0);
+	for (int i = 0; i < PARTSNUM; i++) {
+		initialOffset[i][0] *= -1;
+		initialOffset[i][2] *= -1;
+	}
 	glutInitContextVersion(4, 3);//4.3 version
 	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);//�O�_�V�U�ۮe,GLUT_FORWARD_COMPATIBLE���䴩(?
 	glutInitContextProfile(GLUT_CORE_PROFILE);
@@ -180,22 +185,14 @@ void init() {
 		exit(EXIT_FAILURE);
 	}
 
-	/*glEnable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
 	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);*/
+	glEnable(GL_CULL_FACE);
 	isFrame = false;
 	pNo = 0;
 	animateMode = IDLE;
 	palmMode = OPEN;
-	for (int i = 0; i < PARTSNUM; i++) {
-		translatePart[i][0] = { 0 };
-		translatePart[i][1] = { 0 };
-		translatePart[i][2] = { 0 };
-		rotatePart[i][0] = { 0 };
-		rotatePart[i][1] = { 0 };
-		rotatePart[i][2] = { 0 };
-	}
 
 	//VAO
 	glGenVertexArrays(1, &VAO);
@@ -398,7 +395,7 @@ void Obj2Buffer() {
 void myUpdateModel() {
 	//reset state, translate to initial place
 	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = translate(mat4(1.0f), vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
+		Models[i] = mat4(1.0f);
 	}
 
 	//Body
@@ -500,6 +497,7 @@ void myUpdateModel() {
 
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
+		Models[i] = translate(mat4(1.0f), vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
 		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
 	}
 }

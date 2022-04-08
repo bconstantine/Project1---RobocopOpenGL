@@ -90,7 +90,7 @@ void Obj2Buffer();
 void load2Buffer( string obj,int);
 
 void updateObj(int);
-void resetObj(int);
+void resetModel(int);
 
 bool isFrame;
 PALMMODE palmMode;
@@ -109,7 +109,7 @@ GLuint nVBOs[PARTSNUM];
 GLuint program;
 int pNo;
 
-float rotateCentral = 0.f;
+float rotateCentral = 180.f;
 
 float angles[PARTSNUM];
 float position = 0.0;
