@@ -80,7 +80,7 @@ int main(int argc, char** argv) {
 	//glutAttachMenu(GLUT_RIGHT_BUTTON);	//�P�k�����p
 
 	glutMouseFunc(Mouse);
-	glutTimerFunc(100, idle, 0);
+	glutTimerFunc(100, myTimerFunc, 0);
 	glutMainLoop();
 	return 0;
 }
@@ -120,7 +120,7 @@ void myTimerFunc(int dummy) {
 	}
 	glutPostRedisplay();
 
-	glutTimerFunc(150, idle, out);
+	glutTimerFunc(150, myTimerFunc, out);
 }
 void resetModel() {
 	for (int i = 0; i < PARTSNUM; i++) {

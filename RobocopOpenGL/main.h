@@ -10,6 +10,9 @@ using namespace std;
 #include "vgl.h"
 #include "LoadShaders.h"
 #include "objloader.hpp"
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glut.h"
+#include "imgui/imgui_impl_opengl2.h"
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -66,13 +69,12 @@ void ChangeSize(int w,int h);
 void display();
 void Keyboard(unsigned char key, int x, int y);
 void Mouse(int button,int state,int x,int y);
+void myTimerFunc(int);
 
 void menuEvents(int option);
 void ActionMenuEvents(int option);
 void ModeMenuEvents(int option);
 void ShaderMenuEvents(int option);
-
-void idle(int dummy);
 
 mat4 translate(float x,float y,float z);
 mat4 scale(float x,float y,float z);
