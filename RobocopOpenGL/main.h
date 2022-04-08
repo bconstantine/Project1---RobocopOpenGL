@@ -58,14 +58,6 @@ enum ANIMATEMODE {
 	SITUP
 };
 
-#define BODY 4
-//not yet changed 
-#define LEFTSHOUDER 1
-#define ULEFTARM 2
-#define DLEFTARM 3
-#define LEFTHAND 4
-
-void updateModels();
 void myUpdateModel();
 
 void init();
@@ -89,8 +81,14 @@ mat4 rotate(float angle,float x,float y,float z);
 void Obj2Buffer();
 void load2Buffer( string obj,int);
 
-void updateObj(int);
-void resetModel(int);
+//animation purposes
+void walk();
+void squat();
+void jumpingJack();
+void gangnamStyle();
+void moonWalk();
+void pushUp();
+void sitUp();
 
 bool isFrame;
 PALMMODE palmMode;
@@ -140,7 +138,5 @@ mat4 Models[PARTSNUM];
 #define rightHand 1
 #define leftFoot 2
 #define rightFoot 3
-#define WALK 1
-#define IDLEA 0
 int mode;
 int action;

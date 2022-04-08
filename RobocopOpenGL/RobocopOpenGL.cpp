@@ -50,7 +50,6 @@ float translatePart[PARTSNUM][3];
 float rotatePart[PARTSNUM][3];
 
 int main(int argc, char** argv) {
-	resetModel(0);
 	glutInit(&argc, argv);
 	init();
 	mat4 a(1.0f);
@@ -93,23 +92,37 @@ void ChangeSize(int w, int h) {
 void Mouse(int button, int state, int x, int y) {
 	if (button == 2) isFrame = false;
 }
-void idle(int dummy) {
-	isFrame = true;
+void myTimerFunc(int dummy) {
 	int out = 0;
-	if (action == WALK) {
-		updateObj(dummy);
-		out = dummy + 1;
-		if (out > 12) out = 1;
+	if (animateMode == IDLE) {
+
 	}
-	else if (action == IDLE) {
-		resetModel(dummy);
-		out = 0;
+	else if (animateMode == WALK) {
+
+	}
+	else if (animateMode == GANGNAMSTYLE) {
+
+	}
+	else if (animateMode == SQUAT) {
+
+	}
+	else if (animateMode == JUMPINGJACK) {
+
+	}
+	else if (animateMode == MOONWALK) {
+
+	}
+	else if (animateMode == SITUP) {
+
+	}
+	else if (animateMode == PUSHUP) {
+
 	}
 	glutPostRedisplay();
 
 	glutTimerFunc(150, idle, out);
 }
-void resetModel(int f) {
+void resetModel() {
 	for (int i = 0; i < PARTSNUM; i++) {
 		translatePart[i][0] = 0.f;
 		translatePart[i][1] = 0.f;
@@ -119,50 +132,6 @@ void resetModel(int f) {
 		rotatePart[i][2] = 0.f;
 	}
 }
-void updateObj(int frame) {
-	switch (frame) {
-	case 0:
-		//����
-		angles[2] = -45;
-		//�k��
-
-		//�L
-		angles[13] = 45;
-
-		break;
-	case 1:
-	case 2:
-	case 3:
-		angles[1] += 10;
-		angles[12] -= 15;
-		position += 0.1;
-		break;
-	case 4:
-	case 5:
-	case 6:
-		angles[1] -= 10;
-		angles[12] += 15;
-		angles[13] -= 15;
-		position -= 0.1;
-		break;
-	case 7:
-	case 8:
-	case 9:
-		angles[1] -= 10;
-		angles[12] += 15;
-		angles[13] = 0;
-		position += 0.1;
-		break;
-	case 10:
-	case 11:
-	case 12:
-		angles[1] += 10;
-		angles[12] -= 15;
-		angles[13] += 15;
-		position -= 0.1;
-		break;
-	}
-}
 
 
 GLuint M_KaID;
@@ -170,7 +139,7 @@ GLuint M_KdID;
 GLuint M_KsID;
 
 void init() {
-	resetModel(0);
+	resetModel();
 	for (int i = 0; i < PARTSNUM; i++) {
 		initialOffset[i][0] *= -1;
 		initialOffset[i][2] *= -1;
@@ -585,141 +554,6 @@ void myUpdateModel() {
 	}
 }
 
-void updateModels() {
-	mat4 Rotatation[PARTSNUM];
-	mat4 Translation[PARTSNUM];
-	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = mat4(1.0f);
-		Rotatation[i] = mat4(1.0f);
-		Translation[i] = mat4(1.0f);
-	}
-	float r, pitch, yaw, roll;
-	float alpha, beta, gamma;
-
-	//Body
-	beta = angleMain;
-	Rotatation[0] = rotate(beta, 0, 1, 0);
-	Translation[0] = translate(0, 2.9 + position, 0);
-	Models[0] = Translation[0] * Rotatation[0];
-	//����=======================================================
-	//���W���u
-	yaw = DOR(beta); r = 3.7;
-	alpha = angles[1];
-	gamma = 10;
-	Rotatation[1] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);//�V�e����*�V�k����
-	Translation[1] = translate(3.7, 1, -0.5);
-
-	Models[1] = Models[0] * Translation[1] * Rotatation[1];
-
-	//���ӻH
-	Rotatation[4] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);//�V�e����*�V�k����
-	Translation[4] = translate(3.7, 1, -0.5);//�첾�쥪�W���u�B
-	Models[4] = Models[0] * Translation[1] * Rotatation[1];
-
-	//���U���u
-	pitch = DOR(alpha); r = 3;
-	roll = DOR(gamma);
-	static int i = 0;
-	i += 5;
-	alpha = angles[2] - 20;
-	//�W���u+�U���u�V�e����*�V�k����
-	Rotatation[2] = rotate(alpha, 1, 0, 0);
-	//��x�b�첾�H�W���u���b�|����P��:translate(0,r*cos,r*sin)
-	//��z�b�첾�H�W���u���b�|����:translate(r*sin,-rcos,0)
-	Translation[2] = translate(0, -3, 0);
-
-	Models[2] = Models[1] * Translation[2] * Rotatation[2];
-
-
-	pitch = DOR(alpha);
-	//b = DOR(angles[2]);
-	roll = DOR(gamma);
-	//��x���׻P�U���u�ۦP
-	//Rotatation[3] = Rotatation[2];
-	//��x�b�첾�H�W���u���b�|����P��:translate(0,r*cos,r*sin) ,���׬��W���u+�U���u
-	Translation[3] = translate(0, -4.8, 0);
-	Models[3] = Models[2] * Translation[3] * Rotatation[3];
-	//============================================================
-	//�Y==========================================================
-	Translation[5] = translate(0, 3.9, -0.5);
-	Models[5] = Models[0] * Translation[5] * Rotatation[5];
-	//============================================================
-	//�k��=========================================================
-	gamma = -10; alpha = angles[6] = -angles[1];
-	Rotatation[6] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[6] = translate(-3.9, 1.7, -0.2);
-	Models[6] = Models[0] * Translation[6] * Rotatation[6];
-
-	Rotatation[9] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[9] = translate(-3.9, 1.1, -0.2);
-	Models[9] = Models[0] * Translation[9] * Rotatation[9];
-
-	angles[7] = angles[2];
-	pitch = DOR(alpha); r = -3;
-	roll = DOR(gamma);
-	alpha = angles[7] - 20;
-	Rotatation[7] = rotate(alpha, 1, 0, 0);
-	Translation[7] = translate(0, -3, 0);
-	Models[7] = Models[6] * Translation[7] * Rotatation[7];
-
-	pitch = DOR(alpha);
-	//b = DOR(angles[7]);
-	roll = DOR(gamma);
-	Translation[8] = translate(0, -6, 0);
-	Models[8] = Models[7] * Translation[8] * Rotatation[8];
-	//=============================================================
-	//back&DBody===================================================
-	Translation[10] = translate(0, 2, -4.5);
-	Models[10] = Models[0] * Translation[10] * Rotatation[10];
-
-	Translation[11] = translate(0, -5.3, 0);
-	Models[11] = Models[0] * Translation[11] * Rotatation[11];
-	//=============================================================
-	//���}
-	alpha = angles[12]; gamma = 10;
-	Rotatation[12] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[12] = translate(1.8, -4.5, 0);
-	Models[12] = Translation[12] * Rotatation[12] * Models[12];
-
-	pitch = DOR(alpha); r = -7;
-	roll = DOR(gamma);
-	alpha = angles[13] + angles[12];
-	Translation[13] = translate(-r * sin(roll), r * cos(pitch), r * sin(pitch)) * Translation[12];
-	Rotatation[13] = rotate(alpha, 1, 0, 0);
-	Models[13] = Translation[13] * Rotatation[13] * Models[13];
-
-	pitch = DOR(alpha); r = -5;
-	//b = DOR(angles[13]);
-	roll = DOR(gamma);
-	Translation[14] = translate(-(r + 2) * sin(roll), r * cos(pitch), r * sin(pitch) - 1) * Translation[13];
-	Rotatation[14] = rotate(alpha, 1, 0, 0);
-	Models[14] = Translation[14] * Rotatation[14] * Models[14];
-	//=============================================================
-	//�k�}
-	alpha = angles[15] = -angles[12];
-	gamma = -10;
-	Rotatation[15] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[15] = translate(-1.8, -4.5, 0);
-	Models[15] = Translation[15] * Rotatation[15] * Models[15];
-
-	angles[16] = angles[13];
-	pitch = DOR(alpha); r = -7;
-	roll = DOR(gamma);
-	alpha = angles[16] + angles[15];
-	Rotatation[16] = rotate(alpha, 1, 0, 0);
-	Translation[16] = translate(-r * sin(roll), r * cos(pitch), r * sin(pitch)) * Translation[15];
-	Models[16] = Translation[16] * Rotatation[16] * Models[16];
-
-	pitch = DOR(alpha); r = -5;
-	//b = DOR(angles[16]);
-	roll = DOR(gamma);
-	alpha = angles[15] + angles[16];
-	Translation[17] = translate(-(r + 2) * sin(roll), r * cos(pitch), r * sin(pitch) - 0.5) * Translation[16];
-	Rotatation[17] = rotate(alpha, 1, 0, 0);
-	Models[17] = Translation[17] * Rotatation[17] * Models[17];
-	//=============================================================
-}
-
 void load2Buffer(string obj, int i) {
 	std::vector<vec3> vertices;
 	std::vector<vec2> uvs;
@@ -783,10 +617,16 @@ mat4 rotate(float angle, float x, float y, float z) {
 void Keyboard(unsigned char key, int x, int y) {
 	switch (key) {
 	case 'g':
-		rotateCentral += 1;
+		rotatePart[LEFT_UPPER_ARM][0] += 4;
 		break;
 	case 'h': 
-		rotateCentral -= 1;
+		rotatePart[LEFT_UPPER_ARM][0] -= 4;
+		break;
+	case 'j':
+		rotatePart[LEFT_LOWER_ARM][0] += 4;
+		break;
+	case 'k':
+		rotatePart[LEFT_LOWER_ARM][0] -= 4;
 		break;
 	case '1':
 		angleMain += 5;
