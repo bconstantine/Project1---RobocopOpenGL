@@ -30,20 +30,20 @@ float initialOffset[][3] = {
 	{0,2.3932, 0}, //upper_body
 	{0,1.245, 0.085}, //abs
 	{0,0,0}, //crotch
-	{-1.288, -0.735, 0.172}, //left_upper_thigh //changed
-	{-1.358, -5.544, -0.064}, //left_lower_thigh //changed
-	{-1.432, -9.653, 0.211}, //left_foot //changed
-	{-1.543, -10.489, -1.3}, //left_foot_toes //changed
-	{1.183, -0.789, 0.339}, //right_upper_thigh
+	{-1.288, -0.735, 0.172}, //left_upper_thigh 
+	{-1.358, -5.544, -0.313}, //left_lower_thigh 
+	{-1.432, -9.653, -0.182}, //left_foot 
+	{-1.543, -10.489, -1.762}, //left_foot_toes 
+	{1.183, -0.735, 0.339}, //right_upper_thigh
 	{1.05,-5.564,-0.064}, //right_lower_thigh //10 index
 	{0.994,-9.684,0.211}, //right_foot
 	{1.212,-10.498,-1.3}, //right_foot_toes
-	{2.457,4.095,0.404 }, //right_upper_arm //changed
-	{2.999,1.417,0.308}, //right_lower_arm
-	{3.758,-1.598,0.203}, //right_palm // 15
-	{-2.457,4.095,0.404}, //left_upper_arm
-	{-3.003,1.381,0.42}, //left_lower_arm
-	{-3.772,-1.634,0.315}, //left_parm // 18
+	{2.963,3.59,0.491 }, //right_upper_arm 
+	{3.023,0.991,0.4}, //right_lower_arm
+	{3.249,-2.01,0.342}, //right_palm // 15
+	{-2.963,3.59,0.491}, //left_upper_arm
+	{-3.023,0.991,0.4}, //left_lower_arm
+	{-3.249,-2.01,0.342}, //left_parm // 18
 };
 
 float translatePart[PARTSNUM][3];
@@ -52,6 +52,10 @@ float rotatePart[PARTSNUM][3];
 int main(int argc, char** argv) {
 	glutInit(&argc, argv);
 	init();
+	mat4 a(1.0f);
+	cout << "current a: " << a[0][0] << endl;
+	mat4 b = translate(a, vec3(1, 0, 0));
+	cout << "current a: " << a[0][0] << endl;
 	glutDisplayFunc(display);
 	glutReshapeFunc(ChangeSize);
 	glutKeyboardFunc(Keyboard);
@@ -396,19 +400,22 @@ void myUpdateModel() {
 	//reset state, translate to initial place
 	for (int i = 0; i < PARTSNUM; i++) {
 		Models[i] = mat4(1.0f);
+		Models[i] = translate(mat4(1.0f), vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
+
 	}
 
 	//Body
-	Models[BODY] = translate(Models[BODY], vec3(translatePart[BODY][0], translatePart[BODY][1], translatePart[BODY][2]));
-	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][2], vec3(0, 0, 1));
-	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][1], vec3(0, 1, 0));
-	Models[BODY] = rotate(Models[BODY], rotatePart[BODY][0], vec3(1, 0, 0));
+	Models[CROTCH] = translate(Models[CROTCH], vec3(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2]));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][2], vec3(0, 0, 1));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][1], vec3(0, 1, 0));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][0], vec3(1, 0, 0));
 		//Abs
-		Models[ABS] = translate(Models[BODY], vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][2], vec3(0, 0, 1));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][1], vec3(0, 1, 0));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][0], vec3(1, 0, 0));
-			//Upper Body
+		Models[ABS] = translate(Models[ABS], vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][2], vec3(0, 0, 1.0));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][1], vec3(0, 1.0, 0));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][0], vec3(1.0, 0, 0));
+		//Models[CROTCH] = temp1;
+			/*//Upper Body
 			Models[UPPER_BODY] = translate(Models[ABS], vec3(translatePart[UPPER_BODY][0], translatePart[UPPER_BODY][1], translatePart[UPPER_BODY][2]));
 			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][2], vec3(0, 0, 1));
 			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][1], vec3(0, 1, 0));
@@ -454,7 +461,7 @@ void myUpdateModel() {
 						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][1], vec3(0, 1, 0));
 						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][0], vec3(1, 0, 0));
 		//Left_Upper_thigh
-		Models[LEFT_UPPER_THIGH] = translate(Models[BODY], vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
 		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][2], vec3(0, 0, 1));
 		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][1], vec3(0, 1, 0));
 		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][0], vec3(1, 0, 0));
@@ -474,7 +481,7 @@ void myUpdateModel() {
 					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][1], vec3(0, 1, 0));
 					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][0], vec3(1, 0, 0));
 		//right_upper_thigh
-		Models[RIGHT_UPPER_THIGH] = translate(Models[BODY], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
 		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], vec3(0, 0, 1));
 		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
 		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
@@ -493,11 +500,9 @@ void myUpdateModel() {
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
-
-
+*/
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = translate(mat4(1.0f), vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
 		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
 	}
 }

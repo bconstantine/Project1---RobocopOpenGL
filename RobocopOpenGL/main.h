@@ -58,7 +58,7 @@ enum ANIMATEMODE {
 	SITUP
 };
 
-#define BODY 6
+#define BODY 4
 //not yet changed 
 #define LEFTSHOUDER 1
 #define ULEFTARM 2
