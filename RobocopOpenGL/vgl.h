@@ -8,22 +8,19 @@
 #include <GL3/gl3.h>
 #include <GL3/gl3w.h>
 
-#else
-
-
+#elif !defined GLEW_STATIC
 #define GLEW_STATIC
-
 #include <GL/glew.h>
 
-#ifdef _MSC_VER
+# ifdef _MSC_VER
 #  ifdef _DEBUG
 #      pragma comment (lib, "glew32sd.lib")
 #  else
 #      pragma comment (lib, "glew32s.lib")
 #  endif
+# endif
 #endif
 
-#endif
 
 #define FREEGLUT_STATIC
 

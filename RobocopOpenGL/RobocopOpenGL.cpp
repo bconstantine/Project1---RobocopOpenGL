@@ -34,10 +34,10 @@ float initialOffset[][3] = {
 	{-1.358, -5.544, -0.313}, //left_lower_thigh 
 	{-1.432, -9.653, -0.182}, //left_foot 
 	{-1.543, -10.489, -1.762}, //left_foot_toes 
-	{1.183, -0.735, 0.339}, //right_upper_thigh
-	{1.05,-5.564,-0.064}, //right_lower_thigh //10 index
-	{0.994,-9.684,0.211}, //right_foot
-	{1.212,-10.498,-1.3}, //right_foot_toes
+	{1.288, -0.735, 0.172}, //right_upper_thigh
+	{1.358, -5.544, -0.313}, //right_lower_thigh //10 index
+	{1.432, -9.653, -0.182}, //right_foot
+	{1.543, -10.489, -1.762}, //right_foot_toes
 	{2.963,3.59,0.491 }, //right_upper_arm 
 	{3.023,0.991,0.4}, //right_lower_arm
 	{3.249,-2.01,0.342}, //right_palm // 15
@@ -50,15 +50,95 @@ float translatePart[PARTSNUM][3];
 float rotatePart[PARTSNUM][3];
 
 int main(int argc, char** argv) {
-	glutInit(&argc, argv);
-	init();
-	mat4 a(1.0f);
-	cout << "current a: " << a[0][0] << endl;
-	mat4 b = translate(a, vec3(1, 0, 0));
-	cout << "current a: " << a[0][0] << endl;
-	glutDisplayFunc(display);
-	glutReshapeFunc(ChangeSize);
-	glutKeyboardFunc(Keyboard);
+	//init glfw
+	GLFWwindow* window = initProgramGLFW();
+
+	while (!glfwWindowShouldClose(window)) {
+		//Keep running, put the code here
+		//correct eyeAngleY
+		if (eyeAngley < 0) {
+			eyeAngley = 360 + eyeAngley;
+		}
+		else if (eyeAngley > 360) {
+			eyeAngley = eyeAngley - 360;
+		}
+
+
+		 // Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		if (show_demo_window)
+			ImGui::ShowDemoWindow(&show_demo_window);
+
+		{
+			//another simple window
+			static float f = 0.0f;
+			static int counter = 0;
+
+			ImGui::Begin("Miscellaneous Toolbox");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text("Press this button to enable or disable lighting");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+			ImGui::Checkbox("Another Window", &show_another_window);
+
+			ImGui::SliderFloat("Change zoom: ", &eyedistance, 10.0f, 40.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			ImGui::SliderFloat("Change eye rotation: ", &eyeAngley, 0.f, 360.f);
+			ImGui::ColorPicker3("Change background Color", (float*)&clear_color); // Edit 3 floats representing a color
+
+			if (ImGui::Button("Idle")) {
+				animateMode = IDLE;
+			}
+			else if (ImGui::Button("Walk")) {                      // Buttons return true when clicked (most widgets return true when edited/activated)
+				animateMode = WALK;
+			}
+			//ImGui::SameLine();
+			string animateInfo;
+			if (animateMode == IDLE) {
+				animateInfo = "Idle";
+			}
+			else {
+				animateInfo = "Walk";
+			}
+			ImGui::Text("Current Mode = ", animateInfo.c_str());
+
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
+
+		if (show_another_window)
+		{
+			ImGui::Begin("Another Window", &show_another_window);   // Pass a pointer to our bool variable (the window will have a closing button that will clear the bool when clicked)
+			ImGui::Text("Hello from another window!");
+			if (ImGui::Button("Close Me"))
+				show_another_window = false;
+			ImGui::End();
+		}
+
+		// Rendering
+
+		/*glfwSwapBuffers(window);
+
+		float ratio;
+		int width, height;
+		mat4 m, p, mvp;
+
+		glfwGetFramebufferSize(window, &width, &height);
+		ratio = width / (float)height;
+		glViewport(0, 0, width, height);*/
+
+		displayGLFW(window);
+	}
+
+	/*glutInit(&argc, argv);
+#ifdef __FREEGLUT_EXT_H__
+	glutSetOption(GLUT_ACTION_ON_WINDOW_CLOSE, GLUT_ACTION_GLUTMAINLOOP_RETURNS);
+#endif*/
+	//init();
+	//glutReshapeFunc(ChangeSize);
+	//glutDisplayFunc(display);
+	//glutKeyboardFunc(Keyboard);
 	//int ActionMenu, ModeMenu, ShaderMenu;
 	//ActionMenu = glutCreateMenu(ActionMenuEvents);//�إߥk����
 	////�[�J�k�䪫��
@@ -79,9 +159,18 @@ int main(int argc, char** argv) {
 	//glutAddSubMenu("mode", ModeMenu);
 	//glutAttachMenu(GLUT_RIGHT_BUTTON);	//�P�k�����p
 
-	glutMouseFunc(Mouse);
-	glutTimerFunc(100, myTimerFunc, 0);
-	glutMainLoop();
+	//glutMouseFunc(Mouse);
+	//glutTimerFunc(100, myTimerFunc, 0);
+	//glutMainLoop();
+
+	//stop imgui
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+
+	//stop glfw
+	glfwDestroyWindow(window);
+	glfwTerminate();
 	return 0;
 }
 void ChangeSize(int w, int h) {
@@ -138,8 +227,9 @@ GLuint M_KaID;
 GLuint M_KdID;
 GLuint M_KsID;
 
-void init() {
+GLFWwindow* initProgramGLFW() {
 	resetModel();
+	ModelBackground = mat4(1.0);
 	for (int i = 0; i < PARTSNUM; i++) {
 		initialOffset[i][0] *= -1;
 		initialOffset[i][2] *= -1;
@@ -206,29 +296,74 @@ void init() {
 	initialOffset[UPPER_BODY][1] -= initialOffset[ABS][1];
 	initialOffset[UPPER_BODY][2] -= initialOffset[ABS][2];
 
-	glutInitContextVersion(4, 3);//4.3 version
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);//�O�_�V�U�ۮe,GLUT_FORWARD_COMPATIBLE���䴩(?
-	glutInitContextProfile(GLUT_CORE_PROFILE);
+	
+	if (!glfwInit()) {
+		cout << "Fail initialization of GLFW\n";
+		exit(EXIT_FAILURE);
+	}
+	glfwSetErrorCallback(error_callback);
 
-	//multisample for golygons smooth
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(800, 600);
-	glutCreateWindow("Project 1 - Robocop");
+	//create window and context
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_REFRESH_RATE, 60);
 
-	glewExperimental = GL_TRUE; //�m��glewInit()���e
-	if (glewInit()) {
-		std::cerr << "Unable to initialize GLEW ... exiting" << std::endl;//c error
+	//fullscreen
+	//GLFWwindow* window = glfwCreateWindow(1920, 1080, "Project1 - Robocop", glfwGetPrimaryMonitor(), NULL);
+	
+	//windowed full screen
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+	GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Project1 - Robocop", NULL, NULL);
+
+	if (!window) {
+		//window creation failed, check whether version apply with the machine
+		cout << "window creation failed\n";
 		exit(EXIT_FAILURE);
 	}
 
+	glfwSetKeyCallback(window, KeyboardGLFW);
+	glfwMakeContextCurrent(window);
+
+	//init glew
+	glewExperimental = TRUE;
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		cout << "glew init failed: " << glewGetErrorString(err) << endl;
+		exit(EXIT_FAILURE);
+	}
+
+
+
+	//multisample for polygons smooth
+	//glfw by default already use double buffering, depth buffer, and also (RGB?)
+	glEnable(GL_MULTISAMPLE);
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LESS);
-	glCullFace(GL_BACK);
 	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	glfwSwapInterval(1); // the time wait for every change
+
 	isFrame = false;
 	pNo = 0;
 	animateMode = IDLE;
 	palmMode = OPEN;
+
+	//init imgui
+	 // Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+	// Setup Platform / Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
 
 	//VAO
 	glGenVertexArrays(1, &VAO);
@@ -255,13 +390,13 @@ void init() {
 	M_KdID = M_KaID + 1;
 	M_KsID = M_KaID + 2;
 
-	Projection = glm::perspective(80.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+	Projection = glm::perspective(80.0f, (float)1920 / 1080, 0.1f, 100.0f);
 	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
 
 	// Camera matrix
 	View = glm::lookAt(
-		glm::vec3(0, 10, 25), // Camera is at (0,10,25), in World Space
-		glm::vec3(0, 0, 0), // and looks at the origin
+		glm::vec3(0, 10, eyedistance), // Camera is at (0,10,25), in World Space
+		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2]), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
 	);
 
@@ -277,15 +412,23 @@ void init() {
 	//bind UBO to its idx
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, 0, UBOsize);
 	glUniformBlockBinding(program, MatricesIdx, 0);
-
-
-	glClearColor(0.0, 0.0, 0.0, 1);//black screen
+	
+	return window;
 }
 
 #define DOR(angle) (angle*3.1415/180);
-void display() {
-	glClearColor(0.7, 0.7, 0.7, 1);
+
+void displayGLFW(GLFWwindow* window) {
+	//glClearColor(0.7, 0.7, 0.7, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	ImGui::Render();
+	int display_w, display_h;
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT);
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
 	glBindVertexArray(VAO);
 	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
@@ -296,6 +439,7 @@ void display() {
 		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
 	myUpdateModel();
+
 	//update data to UBO for MVP
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &View);
@@ -357,8 +501,69 @@ void display() {
 		}//end for loop for draw one part of the robot	
 
 	}//end for loop for updating and drawing model
-	glFlush();//�j�����W����OpenGL commands
-	glutSwapBuffers();//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
+	cout << "displaying\n";
+	if (useBackground) {
+		cout << "a\n";
+		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &ModelBackground[0][0]);
+
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		// 1rst attribute buffer : vertices
+		glEnableVertexAttribArray(0);
+		glVertexAttribPointer(0,				//location
+			3,				//vec3
+			GL_FLOAT,			//type
+			GL_FALSE,			//not normalized
+			0,				//strip
+			(void*)offset[0]);//buffer offset
+//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
+		offset[0] += vertices_size[PARTSNUM] * sizeof(vec3);
+
+		// 2nd attribute buffer : UVs
+		cout << "b\n";
+		glEnableVertexAttribArray(1);//location 1 :vec2 UV
+		glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+		glVertexAttribPointer(1,
+			2,
+			GL_FLOAT,
+			GL_FALSE,
+			0,
+			(void*)offset[1]);
+		//(location,vec2,type,�T�w�I,�s���I�������q,point)
+		offset[1] += uvs_size[PARTSNUM] * sizeof(vec2);
+
+		// 3rd attribute buffer : normals
+		glEnableVertexAttribArray(2);//location 2 :vec3 Normal
+		glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+		glVertexAttribPointer(2,
+			3,
+			GL_FLOAT,
+			GL_FALSE,
+			0,
+			(void*)offset[2]);
+		//(location,vec3,type,�T�w�I,�s���I�������q,point)
+		cout << "c\n";
+		offset[2] += normals_size[PARTSNUM] * sizeof(vec3);
+
+		int vertexIDoffset = 0;//glVertexID's offset 
+		string mtlname;//material name
+		vec3 Ks = vec3(1, 1, 1);//because .mtl excluding specular , so give it here.
+		for (int j = 0; j < mtls[PARTSNUM].size(); j++) {//
+			cout << "e\n";
+			mtlname = mtls[PARTSNUM][j];
+			cout << "f\n";
+			//find the material diffuse color in map:KDs by material name.
+			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
+			glUniform3fv(M_KsID, 1, &Ks[0]);
+			//          (primitive   , glVertexID base , vertex count    )
+			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[PARTSNUM][j + 1] * 3);
+			//we draw triangles by giving the glVertexID base and vertex count is face count*3
+			vertexIDoffset += faces[PARTSNUM][j + 1] * 3;//glVertexID's base offset is face count*3
+		}//end for loop for draw one part of the robot
+		cout << "e\n";
+	}
+	cout << "displayingfinished\n";
+	glfwSwapBuffers(window);//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
+	glfwPollEvents();
 }
 
 void Obj2Buffer() {
@@ -368,18 +573,45 @@ void Obj2Buffer() {
 	std::vector<std::string> Materials;//mtl-name
 	std::string texture;
 	for (int i = 0; i < PARTSNUM; i++) {
+		//for debug purposes
+
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
 	}
 	//printf("%d\n",texture);
+	if (useBackground) {
+		loadMTL("../Assets/Obj/Sci_Fi_Corridor.mtl", Kds, Kas, Kss, Materials, texture);
+	}
 	for (int i = 0; i < Materials.size(); i++) {
 		string mtlname = Materials[i];
 		//  name            vec3
 		KDs[mtlname] = Kds[i];
 	}
 
+
 	for (int i = 0; i < PARTSNUM; i++) {
+		if (!renderBodyTop && (i >= 0 && i <= 3 || i >= 13)) {
+			continue;
+		}
+
+		if (!renderHead && (i >= 0 && i <= 1)) {
+			continue;
+		}
+
+		if (!renderArm && (i >= 13)) {
+			continue;
+		}
+
+		if (!renderLeg && (i >= 5 && i <= 12)) {
+			continue;
+		}
 		load2Buffer("../Assets/Obj/"+partsList[i]+".obj", i);
 	}
+	cout << "ss\n";
+	if (useBackground) {
+		load2Buffer("../Assets/Obj/Sci_Fi_Corridor.obj", PARTSNUM);
+	}
+	cout << "ssaaaass\n";
+
 	GLuint totalSize[3] = { 0,0,0 };
 	GLuint offset[3] = { 0,0,0 };
 	for (int i = 0; i < PARTSNUM; i++) {
@@ -387,6 +619,13 @@ void Obj2Buffer() {
 		totalSize[1] += uvs_size[i] * sizeof(vec2);
 		totalSize[2] += normals_size[i] * sizeof(vec3);
 	}
+	//cout << "s1\n";
+	if (useBackground) {
+		totalSize[0] += vertices_size[PARTSNUM] * sizeof(vec3);
+		totalSize[1] += uvs_size[PARTSNUM] * sizeof(vec2);
+		totalSize[2] += normals_size[PARTSNUM] * sizeof(vec3);
+	}
+	//cout << "s2\n";
 	//generate vbo
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &uVBO);
@@ -400,9 +639,13 @@ void Obj2Buffer() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, nVBO);//VBO��target�OGL_ARRAY_BUFFER
 	glBufferData(GL_ARRAY_BUFFER, totalSize[2], NULL, GL_STATIC_DRAW);
-
-
-	for (int i = 0; i < PARTSNUM; i++) {
+	//cout << "s3\n";
+	int rep = PARTSNUM; 
+	if (useBackground) {
+		rep++;
+	}
+	//cout << "s4\n";
+	for (int i = 0; i < rep; i++) {
 		glBindBuffer(GL_COPY_WRITE_BUFFER, VBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, VBOs[i]);
 		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[i] * sizeof(vec3));
@@ -425,6 +668,7 @@ void Obj2Buffer() {
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 	}
 	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+	//cout << "s5\n";
 }
 
 
@@ -562,6 +806,7 @@ void load2Buffer(string obj, int i) {
 
 	const char* c = obj.c_str();
 	bool res = loadOBJ(c, vertices, uvs, normals, faces[i], mtls[i]);
+	cout << "load finished!\n";
 	if (!res) printf("load failed\n");
 
 	//glUseProgram(program);
@@ -586,89 +831,96 @@ void load2Buffer(string obj, int i) {
 	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &normals[0], GL_STATIC_DRAW);
 	normals_size[i] = normals.size();
 }
-mat4 translate(float x, float y, float z) {
-	vec4 t = vec4(x, y, z, 1);//w = 1 ,�hx,y,z=0�ɤ]��translate
-	vec4 c1 = vec4(1, 0, 0, 0);
-	vec4 c2 = vec4(0, 1, 0, 0);
-	vec4 c3 = vec4(0, 0, 1, 0);
-	mat4 M = mat4(c1, c2, c3, t);
-	return M;
-}
-mat4 scale(float x, float y, float z) {
-	vec4 c1 = vec4(x, 0, 0, 0);
-	vec4 c2 = vec4(0, y, 0, 0);
-	vec4 c3 = vec4(0, 0, z, 0);
-	vec4 c4 = vec4(0, 0, 0, 1);
-	mat4 M = mat4(c1, c2, c3, c4);
-	return M;
-}
-
-mat4 rotate(float angle, float x, float y, float z) {
-	float r = DOR(angle);
-	mat4 M = mat4(1);
-
-	vec4 c1 = vec4(cos(r) + (1 - cos(r)) * x * x, (1 - cos(r)) * y * x + sin(r) * z, (1 - cos(r)) * z * x - sin(r) * y, 0);
-	vec4 c2 = vec4((1 - cos(r)) * y * x - sin(r) * z, cos(r) + (1 - cos(r)) * y * y, (1 - cos(r)) * z * y + sin(r) * x, 0);
-	vec4 c3 = vec4((1 - cos(r)) * z * x + sin(r) * y, (1 - cos(r)) * z * y - sin(r) * x, cos(r) + (1 - cos(r)) * z * z, 0);
-	vec4 c4 = vec4(0, 0, 0, 1);
-	M = mat4(c1, c2, c3, c4);
-	return M;
-}
-void Keyboard(unsigned char key, int x, int y) {
+//Keyboard for GLFW
+void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	switch (key) {
-	case 'g':
+	case GLFW_KEY_W:
+
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 180;
+		rotatePart[CROTCH][2] = 0;
+
+		//translatePart[CROTCH][0] += 0;
+		//translatePart[CROTCH][1] += 0;
+		translatePart[CROTCH][2] -= WALKSPEED;
+
+		break;
+	case GLFW_KEY_A:
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = -90;
+		rotatePart[CROTCH][2] = 0;
+
+		translatePart[CROTCH][0] -= WALKSPEED;
+		//translatePart[CROTCH][1] += 0;
+		//translatePart[CROTCH][2] += 0;
+		break;
+	case GLFW_KEY_D:
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 90;
+		rotatePart[CROTCH][2] = 0;
+
+		translatePart[CROTCH][0] += WALKSPEED;
+		//translatePart[CROTCH][1] += 0;
+		//translatePart[CROTCH][2] += 0;
+		break;
+	case GLFW_KEY_S:
+
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 0;
+		rotatePart[CROTCH][2] = 0;
+
+		//translatePart[CROTCH][0] += 0;
+		//translatePart[CROTCH][1] += 0;
+		translatePart[CROTCH][2] += WALKSPEED;
+		break;
+	case GLFW_KEY_ESCAPE:
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+		break;
+	case GLFW_KEY_G:
 		rotatePart[LEFT_UPPER_ARM][0] += 4;
 		break;
-	case 'h': 
+	case GLFW_KEY_H:
 		rotatePart[LEFT_UPPER_ARM][0] -= 4;
 		break;
-	case 'j':
+	case GLFW_KEY_J:
 		rotatePart[LEFT_LOWER_ARM][0] += 4;
 		break;
-	case 'k':
+	case GLFW_KEY_K:
 		rotatePart[LEFT_LOWER_ARM][0] -= 4;
 		break;
-	case '1':
-		angleMain += 5;
-		if (angleMain >= 360) angleMain = 0;
-		printf("beta:%f\n", angleMain);
-		break;
-	case '2':
-		angleMain -= 5;
-		if (angleMain <= 0) angleMain = 360;
-		printf("beta:%f\n", angleMain);
-		break;
-	case 'w':
+	case GLFW_KEY_UP:
 		eyedistance -= 0.2;
+		clip(eyedistance, 10, 40);
 		break;
-	case 's':
+	case GLFW_KEY_DOWN:
 		eyedistance += 0.2;
+		clip(eyedistance, 10, 40);
 		break;
-	case 'a':
+	case GLFW_KEY_LEFT:
 		eyeAngley -= 10;
 		break;
-	case 'd':
+	case GLFW_KEY_RIGHT:
 		eyeAngley += 10;
 		break;
-	case 'r':
+	case GLFW_KEY_R:
 		angles[1] -= 5;
 		if (angles[1] == -360) angles[1] = 0;
 		movey = 0;
 		movex = 0;
 		break;
-	case 't':
+	case GLFW_KEY_T:
 		angles[2] -= 5;
 		if (angles[2] == -360) angles[2] = 0;
 		movey = 0;
 		movex = 0;
 		break;
-	case 'q':
+	case GLFW_KEY_Q:
 		break;
-	case 'e':
+	case GLFW_KEY_E:
 		break;
 	}
-	glutPostRedisplay();
 }
+
 void menuEvents(int option) {}
 void ActionMenuEvents(int option) {
 	switch (option) {
@@ -690,6 +942,60 @@ void ModeMenuEvents(int option) {
 		break;
 	}
 }
-void ShaderMenuEvents(int option) {
-	pNo = option;
+
+float clip(float &var, float min, float max) {
+	if (var < min) {
+		var = min;
+	}
+	else if (var > max) {
+		var = max;
+	}
+	return var;
 }
+
+float getTime()
+{
+	return glfwGetTime();
+}
+
+float clampValMaxMin(float x, float clampToMax, float clampToMin)
+{
+	if (x >= clampToMax)
+	{
+		return clampToMax;
+	}
+	else if (x <= clampToMin)
+	{
+		return clampToMin;
+	}
+	else
+	{
+		return x;
+	}
+}
+
+float clampValMax(float x, float clampToMax)
+{
+	if (x >= clampToMax)
+	{
+		return clampToMax;
+	}
+	else
+	{
+		return x;
+	}
+}
+
+float clampValMin(float x, float clampToMin)
+{
+	if (x <= clampToMin)
+	{
+		return clampToMin;
+	}
+	else
+	{
+		return x;
+	}
+
+
+

@@ -7,16 +7,23 @@
 using namespace std;
 //#include <cmath>
 
+//for imgui
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #include "vgl.h"
 #include "LoadShaders.h"
 #include "objloader.hpp"
 #include "imgui/imgui.h"
-#include "imgui/imgui_impl_glut.h"
-#include "imgui/imgui_impl_opengl2.h"
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
+
 
 #define deg2rad(x) ((x)*((3.1415926f)/(180.0f)))
 #define rad2deg(x) ((180.0f) / ((x)*(3.1415926f)))
@@ -45,6 +52,25 @@ using namespace glm;
 #define LEFT_LOWER_ARM 17
 #define LEFT_PALM 18
 
+#define WALKSPEED 1;
+
+//for debugging
+bool renderBodyTop = false;
+bool renderArm = false;
+bool renderHead = false;
+bool renderLeg = true;
+
+//background usage
+bool useBackground = true;
+mat4 ModelBackground;
+
+//for imgui usage
+
+const char* glsl_version = "#version 130";
+bool show_demo_window = true;
+bool show_another_window = false;
+ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+
 enum PALMMODE {
 	OPEN, 
 	CLENCH
@@ -63,22 +89,19 @@ enum ANIMATEMODE {
 
 void myUpdateModel();
 
-void init();
-
 void ChangeSize(int w,int h);
-void display();
-void Keyboard(unsigned char key, int x, int y);
 void Mouse(int button,int state,int x,int y);
 void myTimerFunc(int);
 
-void menuEvents(int option);
-void ActionMenuEvents(int option);
-void ModeMenuEvents(int option);
-void ShaderMenuEvents(int option);
+//for using with GLFW
+GLFWwindow* initProgramGLFW();
+void displayGLFW(GLFWwindow* window); //displayGLFW()
+void KeyboardGLFW(GLFWwindow*, int key, int scancode, int action, int mods);
 
-mat4 translate(float x,float y,float z);
-mat4 scale(float x,float y,float z);
-mat4 rotate(float angle,float x,float y,float z);
+//for GLFW
+void error_callback(int error, const char* description) {
+	fprintf(stderr, "Error: %s\n", description);
+}
 
 void Obj2Buffer();
 void load2Buffer( string obj,int);
@@ -92,6 +115,9 @@ void moonWalk();
 void pushUp();
 void sitUp();
 
+//additional tools function
+float clip(float &var, float min, float max);
+
 bool isFrame;
 PALMMODE palmMode;
 ANIMATEMODE animateMode;
@@ -103,9 +129,9 @@ GLuint uVBO;
 GLuint nVBO;
 GLuint mVBO;
 GLuint UBO;
-GLuint VBOs[PARTSNUM];
-GLuint uVBOs[PARTSNUM];
-GLuint nVBOs[PARTSNUM];
+GLuint VBOs[PARTSNUM+1];
+GLuint uVBOs[PARTSNUM+1];
+GLuint nVBOs[PARTSNUM+1];
 GLuint program;
 int pNo;
 
@@ -113,7 +139,7 @@ float rotateCentral = 180.f;
 
 float angles[PARTSNUM];
 float position = 0.0;
-float angleMain = 0.0;
+float angleMain= 0.0;
 float eyeAngley = 0.0;
 float eyedistance = 20.0;
 float size = 1;
@@ -121,13 +147,13 @@ GLfloat movex,movey;
 GLint MatricesIdx;
 GLuint ModelID;
 
-int vertices_size[PARTSNUM];
-int uvs_size[PARTSNUM];
-int normals_size[PARTSNUM];
-int materialCount[PARTSNUM];
+int vertices_size[PARTSNUM+1];
+int uvs_size[PARTSNUM+1];
+int normals_size[PARTSNUM+1];
+int materialCount[PARTSNUM+1];
 
-std::vector<std::string> mtls[PARTSNUM];//use material
-std::vector<unsigned int> faces[PARTSNUM];//face count
+std::vector<std::string> mtls[PARTSNUM+1];//use material
+std::vector<unsigned int> faces[PARTSNUM+1];//face count
 map<string,vec3> KDs;//mtl-name&Kd
 map<string,vec3> KSs;//mtl-name&Ks
 
@@ -135,6 +161,7 @@ mat4 Projection ;
 mat4 View;
 mat4 Model;
 mat4 Models[PARTSNUM];
+
 
 #define leftHand 0
 #define rightHand 1
