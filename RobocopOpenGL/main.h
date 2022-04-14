@@ -7,18 +7,30 @@
 using namespace std;
 //#include <cmath>
 
+//for imgui
+#include "imgui/imgui.h"
+#include "imgui/imgui_impl_glfw.h"
+#include "imgui/imgui_impl_opengl3.h"
+
+#define GLFW_INCLUDE_NONE
+#include <GLFW/glfw3.h>
+
 #include "vgl.h"
 #include "LoadShaders.h"
 #include "objloader.hpp"
+#include "imgui/imgui.h"
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 using namespace glm;
 
+
 #define deg2rad(x) ((x)*((3.1415926f)/(180.0f)))
 #define rad2deg(x) ((180.0f) / ((x)*(3.1415926f)))
 
-#define PARTSNUM 50
+#define EXTRAPARTS 2
+#define PARTSNUM 19
+#define PARTSTOTAL 19+2
 
 #define HEAD 0
 #define NECK 1
@@ -30,114 +42,161 @@ using namespace glm;
 #define LEFT_FOOT 7
 #define LEFT_FOOT_TOES 8
 #define RIGHT_UPPER_THIGH 9
-#define HOLDER3 10
-#define HOLDER2 11
-#define HOLDER1 12
-#define RIGHT_LOWER_THIGH 13
-#define RIGHT_FOOT 14
-#define RIGHT_FOOT_TOES 15
-#define RIGHT_UPPER_ARM 16
-#define RIGHT_LOWER_ARM 17
-#define RIGHT_PALM 18
-#define RIGHT_THUMB_1 19
-#define RIGHT_THUMB_2 20
-#define RIGHT_POINTER_1 21
-#define RIGHT_POINTER_2 22
-#define RIGHT_POINTER_3 23
-#define RIGHT_MIDDLE_1 24
-#define RIGHT_MIDDLE_2 25
-#define RIGHT_MIDDLE_3 26
-#define RIGHT_INDEX_1 27
-#define RIGHT_INDEX_2 28
-#define RIGHT_INDEX_3 29
-#define RIGHT_PINKY_1 30
-#define RIGHT_PINKY_2 31
-#define RIGHT_PINKY_3 32
-#define LEFT_UPPER_ARM 33
-#define LEFT_LOWER_ARM 34
-#define LEFT_PALM 35
-#define LEFT_THUMB_1 36
-#define LEFT_THUMB_2 37
-#define LEFT_POINTER_1 38
-#define LEFT_POINTER_2 39
-#define LEFT_POINTER_3 40
-#define LEFT_MIDDLE_1 41
-#define LEFT_MIDDLE_2 42
-#define LEFT_MIDDLE_3 43
-#define LEFT_INDEX_1 44
-#define LEFT_INDEX_2 45
-#define LEFT_INDEX_3 46
-#define LEFT_PINKY_1 47
-#define LEFT_PINKY_2 48
-#define LEFT_PINKY_3 49
+#define RIGHT_LOWER_THIGH 10
+#define RIGHT_FOOT 11
+#define RIGHT_FOOT_TOES 12
+#define RIGHT_UPPER_ARM 13
+#define RIGHT_LOWER_ARM 14
+#define RIGHT_PALM 15
+#define LEFT_UPPER_ARM 16
+#define LEFT_LOWER_ARM 17
+#define LEFT_PALM 18
 
-#define BODY 6
-//not yet changed 
-#define LEFTSHOUDER 1
-#define ULEFTARM 2
-#define DLEFTARM 3
-#define LEFTHAND 4
+#define WALKSPEED 1;
 
-void updateModels();
+
+//for debugging
+bool renderBodyTop = true;
+bool renderArm = true;
+bool renderHead = true;
+bool renderLeg = true;
+
+//background usage
+bool useBackground = true;
+mat4 ModelBackground;
+float backGroundShiftUp = 30.02f;
+float robotShiftUp = 9.653 + 1.064;
+
+//for imgui usage
+
+const char* glsl_version = "#version 130";
+bool show_demo_window = true;
+bool show_another_window = false;
+ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
+
+bool changePalm = false;
+enum PALMMODE {
+	OPEN, 
+	CLENCH
+};
+
+enum ANIMATEMODE {
+	IDLE,
+	WALK, 
+	SQUAT, 
+	JUMPINGJACK,
+	GANGNAMSTYLE,
+	MOONWALK,
+	PUSHUP,
+	SITUP
+};
+
 void myUpdateModel();
 
-void init();
-
 void ChangeSize(int w,int h);
-void display();
-void Keyboard(unsigned char key, int x, int y);
 void Mouse(int button,int state,int x,int y);
+void myTimerFunc(int);
 
-void menuEvents(int option);
-void ActionMenuEvents(int option);
-void ModeMenuEvents(int option);
-void ShaderMenuEvents(int option);
+//for using with GLFW
+GLFWwindow* initProgramGLFW(ImFont*);
+void displayGLFW(GLFWwindow* window); //displayGLFW()
+void KeyboardGLFW(GLFWwindow*, int key, int scancode, int action, int mods);
 
-void idle(int dummy);
-
-mat4 translate(float x,float y,float z);
-mat4 scale(float x,float y,float z);
-mat4 rotate(float angle,float x,float y,float z);
+//for GLFW
+void error_callback(int error, const char* description) {
+	fprintf(stderr, "Error: %s\n", description);
+}
 
 void Obj2Buffer();
 void load2Buffer( string obj,int);
 
-void updateObj(int);
-void resetObj(int);
+//animation purposes
+void walk();
+void squat();
+void jumpingJack();
+void gangnamStyle();
+void moonWalk();
+void pushUp();
+void sitUp();
 
 bool isFrame;
+PALMMODE palmMode;
+ANIMATEMODE animateMode;
 
 GLuint VAO;
+GLuint EBO; 
 GLuint VBO;
 GLuint uVBO;
 GLuint nVBO;
 GLuint mVBO;
 GLuint UBO;
-GLuint VBOs[PARTSNUM];
-GLuint uVBOs[PARTSNUM];
-GLuint nVBOs[PARTSNUM];
+GLuint VBOs[PARTSTOTAL+1];
+GLuint uVBOs[PARTSTOTAL+1];
+GLuint nVBOs[PARTSTOTAL+1];
 GLuint program;
 int pNo;
 
 float rotateCentral = 0.f;
 
-float angles[PARTSNUM];
+
+//for viewing
 float position = 0.0;
-float angleMain = 0.0;
 float eyeAngley = 0.0;
 float eyedistance = 20.0;
-float size = 1;
-GLfloat movex,movey;
+float FoV = 80; //in degree, between 30-90
+float nearClip = 0.1;
+float farClip = 200;
+
+
 GLint MatricesIdx;
 GLuint ModelID;
+int vertices_size[PARTSTOTAL+1];
+int uvs_size[PARTSTOTAL+1];
+int normals_size[PARTSTOTAL+1];
+int materialCount[PARTSTOTAL+1];
 
-int vertices_size[PARTSNUM];
-int uvs_size[PARTSNUM];
-int normals_size[PARTSNUM];
-int materialCount[PARTSNUM];
+//for shadow and lighting
+//void displayLightSource(mat4,mat4);
+//GLuint lightVAO; //create a different VAO for lighting, so it won't get mix up with object VAO, for easier debugging
+//bool renderLightBox = true;
+//const float lightScale = 0.00002;
+//GLuint lightBoxBuffer;
+//GLuint lightBoxIndices;
+//GLuint ModelMatrixID;
+//GLuint ViewMatrixID;
+//GLuint ProjectionMatrixID;
+//const float lightModel[] = {
+//	//x-y-z element
+//	//0 = right up back
+//	//1 = left up back
+//	//2 = right up front
+//	//3 = left up front
+//	//4 = right bottom back
+//	//5 = left bottom back
+//	//6 = left bottom front
+//	//7 = right bottom front
+//	1,1,-1,
+//	-1,1,-1,
+//	1,1,1,
+//	-1,1,1,
+//	1,-1,-1,
+//	-1,-1,-1,
+//	-1,-1,1,
+//	1,-1,1
+//};
+//static int recTriangleStripOrder[] = {
+//	//https://stackoverflow.com/questions/28375338/cube-using-single-gl-triangle-strip
+//	//obtained from here
+//	3,2,6,7,4,2,0,3,1,6,5,4,1,0
+//};
+//float lightPosition[] = { 0,1,1 };
+//GLuint renderLightProgram;
+//GLuint depthMapFBO; //for frame buffer
+//const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024; 
+//unsigned int depthMap; //for textures
 
-std::vector<std::string> mtls[PARTSNUM];//use material
-std::vector<unsigned int> faces[PARTSNUM];//face count
+std::vector<std::string> mtls[PARTSTOTAL+1];//use material
+std::vector<unsigned int> faces[PARTSTOTAL+1];//face count
 map<string,vec3> KDs;//mtl-name&Kd
 map<string,vec3> KSs;//mtl-name&Ks
 
@@ -146,11 +205,13 @@ mat4 View;
 mat4 Model;
 mat4 Models[PARTSNUM];
 
+//for monitor
+int widthStart = 400;
+int heightStart = 0;
+
 #define leftHand 0
 #define rightHand 1
 #define leftFoot 2
 #define rightFoot 3
-#define WALK 1
-#define IDLE 0
 int mode;
 int action;

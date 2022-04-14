@@ -1,7 +1,7 @@
 #include "main.h"
 
 vec3 camera = vec3(0, 0, 20);
-string partsList[51] = { "head",
+string partsList[PARTSNUM] = { "head",
 "neck",
 "upper_body",
 "abs",
@@ -11,46 +11,20 @@ string partsList[51] = { "head",
 "left_foot",
 "left_foot_toes",
 "right_upper_thigh",
-"holder3",
-"holder2",
-"holder1",
 "right_lower_thigh",
 "right_foot",
 "right_foot_toes",
 "right_upper_arm",
 "right_lower_arm",
 "right_palm",
-"right_thumb_1",
-"right_thumb_2",
-"right_pointer_1",
-"right_pointer_2",
-"right_pointer_3",
-"right_middle_1",
-"right_middle_2",
-"right_middle_3",
-"right_index_1",
-"right_index_2",
-"right_index_3",
-"right_pinky_1",
-"right_pinky_2",
-"right_pinky_3",
 "left_upper_arm",
 "left_lower_arm",
-"left_palm",
-"left_thumb_1",
-"left_thumb_2",
-"left_pointer_1",
-"left_pointer_2",
-"left_pointer_3",
-"left_middle_1",
-"left_middle_2",
-"left_middle_3",
-"left_index_1",
-"left_index_2",
-"left_index_3",
-"left_pinky_1",
-"left_pinky_2",
-"left_pinky_3"
+"left_palm"
+};
+
+string extraBodyPart[EXTRAPARTS] = {
+	"right_palm_clench",
+	"left_palm_clench"
 };
 
 float initialOffset[][3] = {
@@ -59,225 +33,198 @@ float initialOffset[][3] = {
 	{0,2.3932, 0}, //upper_body
 	{0,1.245, 0.085}, //abs
 	{0,0,0}, //crotch
-	{-1.288, -0.735, 0.172}, //left_upper_thigh //changed
-	{-1.358, -5.544, -0.064}, //left_lower_thigh //changed
-	{-1.432, -9.653, 0.211}, //left_foot //changed
-	{-1.543, -10.489, -1.3}, //left_foot_toes //changed
-	{1.041, -0.919, 0.406}, //right_upper_thigh
-	{1.156, -0.847, 0.346}, //holder3 //10 index 
-	{1.137,-0.787,0.418}, //holder2
-	{1.245,-0.812,0.481}, //holder1 
-	{1.05,-5.564,-0.064}, //right_lower_thigh
-	{0.994,-9.684,0.211}, //right_foot
-	{1.212,-10.498,-1.3}, //right_foot_toes
-	{2.457,4.095,0.404 }, //right_upper_arm //changed
-	{2.999,1.417,0.308}, //right_lower_arm
-	{3.758,-1.598,0.203}, //right_palm
-	{3.506,-2.028,-0.345}, //right_thumb_1 //19 index
-	{3.437,-1.965,-0.81}, //right_thumb_2
-	{3.786,-2.61,-0.267}, //right_pointer_1
-	{3.888,-3.12,-0.254}, //right_pointer_2
-	{3.913,-3.469,-0.223}, //right_pointer_3
-	{3.856,-2.605,0.089}, //right_middle_1
-	{3.911,-3.203,0.099}, //right_middle_2
-	{3.936,-3.598,0.081}, //right_middle_3
-	{3.884,-2.577,0.401}, //right_index_1
-	{3.938,-3.137,0.39}, //right_index_2
-	{3.955,-3.443,0.375}, //right_index_3
-	{3.871,-2.585,0.661}, //right_pinky_1 //changed
-	{3.91,-2.97,0.663}, //right_pinky_2
-	{3.919,-3.234,0.688}, //right_pinky_3 32
-	{-2.457,4.095,0.404}, //left_upper_arm
-	{-3.003,1.381,0.42}, //left_lower_arm
-	{-3.772,-1.634,0.315}, //left_parm
-	{-3.52,-2.063,-0.234}, //left_thumb_1 //36
-	{-3.451,-2.001,-0.699}, //left_thumb_2
-	{-3.8,-2.646,-0.155}, //left_pointer_1
-	{-3.902,-3.156,-0.142}, //left_pointer_2
-	{-3.928,-3.504,-0.112}, //left_pointer_3
-	{-3.87,-2.641,0.201}, //left_middle_1
-	{-3.925,-3.239,0.211}, //left_middle_2
-	{-3.95,-3.634,0.192}, //left_middle_3
-	{-3.898,-2.613,0.512}, //left_index_1
-	{-3.952,-3.172,0.501}, //left_index_2
-	{-3.969,-3.479,0.486}, //left_index_3
-	{-3.886,-2.621,0.773}, //left_pinky_1
-	{-3.924,-3.006,0.775}, //left_pinky_3
-	{-3.933,-3.27,0.8} //left_pinky_3
+	{-1.288, -0.735, 0.172}, //left_upper_thigh 
+	{-1.358, -5.544, -0.313}, //left_lower_thigh 
+	{-1.432, -9.653, -0.182}, //left_foot 
+	{-1.543, -10.489, -1.762}, //left_foot_toes 
+	{1.288, -0.735, 0.172}, //right_upper_thigh
+	{1.358, -5.544, -0.313}, //right_lower_thigh //10 index
+	{1.432, -9.653, -0.182}, //right_foot
+	{1.543, -10.489, -1.762}, //right_foot_toes
+	{2.963,3.59,0.491 }, //right_upper_arm 
+	{3.023,0.991,0.4}, //right_lower_arm
+	{3.249,-2.01,0.342}, //right_palm // 15
+	{-2.963,3.59,0.491}, //left_upper_arm
+	{-3.023,0.991,0.4}, //left_lower_arm
+	{-3.249,-2.01,0.342}, //left_parm // 18
 };
 
 float translatePart[PARTSNUM][3];
 float rotatePart[PARTSNUM][3];
 
-int handIndices(bool isRight, int fingerNumber, int fingerPart) {
-	//fingerNumber:
-	// 1 thumb
-	// 2 pointer
-	// 3 middle
-	// 4 index
-	// 5 pinky
-
-	//fingerPart: 
-	// 1 thumb
-	// 2 pointer
-	// 3 middle
-	// 4 index
-	// 5 pinky
-	int baseIndex= 19;
-	if (!handIndices) {
-		baseIndex = 36;
-	}
-	for (int i = 0; i < fingerNumber-1; i++) {
-		if (i == 0) {
-			baseIndex += 2;
-		}
-		else {
-			baseIndex += 3;
-		}
-	}
-	for (int i = 0; i < fingerPart - 1; i++) {
-		baseIndex++;
-	}
-	return baseIndex;
-}
-
 int main(int argc, char** argv) {
-	glutInit(&argc, argv);
-	glutInitContextVersion(4, 3);//�HOpenGL version4.3���������
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);//�O�_�V�U�ۮe,GLUT_FORWARD_COMPATIBLE���䴩(?
-	glutInitContextProfile(GLUT_CORE_PROFILE);
+	//init glfw
+	ImFont* font1 = NULL;
+	GLFWwindow* window = initProgramGLFW(font1);
 
-	//multisample for golygons smooth
-	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE | GLUT_DEPTH | GLUT_MULTISAMPLE);
-	glutInitWindowSize(800, 600);
-	glutCreateWindow("Project 1 - Robocop");
+	while (!glfwWindowShouldClose(window)) {
+		//Keep running, put the code here
+		//correct eyeAngleY
+		if (eyeAngley < 0) {
+			eyeAngley = 360 + eyeAngley;
+		}
+		else if (eyeAngley > 360) {
+			eyeAngley = eyeAngley - 360;
+		}
 
-	glewExperimental = GL_TRUE; //�m��glewInit()���e
-	if (glewInit()) {
-		std::cerr << "Unable to initialize GLEW ... exiting" << std::endl;//c error
-		exit(EXIT_FAILURE);
+
+		 // Start the Dear ImGui frame
+		ImGui_ImplOpenGL3_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+
+		//push font
+		ImGui::PushFont(font1);
+
+
+		if (show_demo_window)
+			ImGui::ShowDemoWindow(&show_demo_window);
+
+		{
+			ImGui::SetNextWindowSizeConstraints(ImVec2(400,1080), ImVec2(400,1080)); //width x height fixed
+			ImGui::SetNextWindowPos(ImVec2(0, 0));
+			//another simple window
+			static float f = 0.0f;
+			static int counter = 0;
+
+			ImGui::Begin("Miscellaneous Toolbox");                          // Create a window called "Hello, world!" and append into it.
+
+			ImGui::Text("Press this button to enable or disable lighting");               // Display some text (you can use a format strings too)
+			ImGui::Checkbox("Demo Window", &show_demo_window);
+			//ImGui::Checkbox("Show Light Box", &renderLightBox);
+			if (ImGui::CollapsingHeader("Projection Related")) {
+				ImGui::SliderFloat("Change FoV: ", &FoV, 30.0f, 90.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+				ImGui::SliderFloat("Change near clip: ", &nearClip, 0.1f, 10.f);
+				ImGui::SliderFloat("Change far clip: ", &farClip, 50.f, 200.f);
+			}
+			if (ImGui::CollapsingHeader("View Related: ")) {
+				ImGui::SliderFloat("Change zoom: ", &eyedistance, 10.0f, 40.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+				ImGui::SliderFloat("Change eye rotation: ", &eyeAngley, 0.f, 360.f);
+			}
+			if (ImGui::CollapsingHeader("Background color: ")) {
+				ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
+				ImGui::ColorPicker3("", (float*)&clear_color); // Edit 3 floats representing a color
+			}
+
+			if (ImGui::CollapsingHeader("Current Modes: ")) {
+				static int currentMode;
+				static string animateInfo;
+				if (animateMode == IDLE) {
+					currentMode = 0;
+				}
+				else if (animateMode == WALK) {
+					currentMode = 1;
+				}
+				else if (animateMode == SQUAT) {
+					currentMode = 2;
+				}
+				else if (animateMode == JUMPINGJACK) {
+					currentMode = 3;
+				}
+				else if (animateMode == GANGNAMSTYLE) {
+					currentMode = 4;
+				}
+				else if (animateMode == MOONWALK) {
+					currentMode = 5;
+				}
+				else if (animateMode == PUSHUP) {
+					currentMode = 6;
+				}
+				else if (animateMode == SITUP) {
+					currentMode = 7;
+				}
+				ImGui::RadioButton("Idle", &currentMode, 0); ImGui::SameLine();
+				ImGui::RadioButton("Walk", &currentMode, 1); ImGui::SameLine();
+				ImGui::RadioButton("Squat", &currentMode, 2); ImGui::SameLine();
+				ImGui::RadioButton("Jumping Jack", &currentMode, 3); 
+				ImGui::RadioButton("Gangnam Style", &currentMode, 4); ImGui::SameLine();
+				ImGui::RadioButton("MoonWalk", &currentMode, 5); ImGui::SameLine();
+				ImGui::RadioButton("Pushup", &currentMode, 6); ImGui::SameLine();
+				ImGui::RadioButton("Situp", &currentMode, 7);
+
+				if (currentMode == 0) {
+					animateMode = IDLE;
+					animateInfo = "IDLE";
+				}
+				else if (currentMode == 1) {
+					animateMode = WALK;
+					animateInfo = "WALK";
+				}
+				else if (currentMode == 2) {
+					animateMode = SQUAT;
+					animateInfo = "SQUAT";
+				}
+				else if (currentMode == 3) {
+					animateMode = JUMPINGJACK;
+					animateInfo = "JUMPING JACK";
+				}
+				else if (currentMode == 4) {
+					animateMode = GANGNAMSTYLE;
+					animateInfo = "GANGNAM STYLE";
+				}
+				else if (currentMode == 5) {
+					animateMode = MOONWALK;
+					animateInfo = "MOON WALK";
+				}
+				else if (currentMode == 6) {
+					animateMode = PUSHUP;
+					animateInfo = "PUSH UP";
+				}
+				else if (currentMode == 7) {
+					animateMode = SITUP;
+					animateInfo = "SIT UP";
+				}
+				ImGui::Text("Current Mode = %s", animateInfo.c_str());
+			}
+			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::End();
+		}
+		//popping font
+		ImGui::PopFont();
+		// Rendering
+
+		/*glfwSwapBuffers(window);
+
+		float ratio;
+		int width, height;
+		mat4 m, p, mvp;
+
+		glfwGetFramebufferSize(window, &width, &height);
+		ratio = width / (float)height;
+		glViewport(0, 0, width, height);*/
+
+		displayGLFW(window);
 	}
 
-	glEnable(GL_DEPTH_TEST);
-	glDepthFunc(GL_LESS);
-	glCullFace(GL_BACK);
-	glEnable(GL_CULL_FACE);
-	init();
-	glutDisplayFunc(display);
-	glutReshapeFunc(ChangeSize);
-	glutKeyboardFunc(Keyboard);
-	//int ActionMenu, ModeMenu, ShaderMenu;
-	//ActionMenu = glutCreateMenu(ActionMenuEvents);//�إߥk����
-	////�[�J�k�䪫��
-	//glutAddMenuEntry("idle", 0);
-	//glutAddMenuEntry("walk", 1);
-	//glutAttachMenu(GLUT_RIGHT_BUTTON);	//�P�k�����p
+	//stop imgui
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
 
-	//ModeMenu = glutCreateMenu(ModeMenuEvents);//�إߥk����
-	////�[�J�k�䪫��
-	//glutAddMenuEntry("Line", 0);
-	//glutAddMenuEntry("Fill", 1);
-	//glutAttachMenu(GLUT_RIGHT_BUTTON);	//�P�k�����p
-
-
-	//glutCreateMenu(menuEvents);//�إߥk����
-	////�[�J�k�䪫��
-	//glutAddSubMenu("action", ActionMenu);
-	//glutAddSubMenu("mode", ModeMenu);
-	//glutAttachMenu(GLUT_RIGHT_BUTTON);	//�P�k�����p
-
-	glutMouseFunc(Mouse);
-	glutTimerFunc(100, idle, 0);
-	glutMainLoop();
+	//stop glfw
+	glfwDestroyWindow(window);
+	glfwTerminate();
 	return 0;
 }
-void ChangeSize(int w, int h) {
-	if (h == 0) h = 1;
-	glViewport(0, 0, w, h);
-	Projection = perspective(80.0f, (float)w / h, 0.1f, 100.0f);
-}
-void Mouse(int button, int state, int x, int y) {
-	if (button == 2) isFrame = false;
-}
-void idle(int dummy) {
-	isFrame = true;
-	int out = 0;
-	if (action == WALK) {
-		updateObj(dummy);
-		out = dummy + 1;
-		if (out > 12) out = 1;
-	}
-	else if (action == IDLE) {
-		resetObj(dummy);
-		out = 0;
-	}
-	glutPostRedisplay();
-
-	glutTimerFunc(150, idle, out);
-}
-void resetObj(int f) {
+void resetModel() {
 	for (int i = 0; i < PARTSNUM; i++) {
-		translatePart[i][0] = { 0 };
-		translatePart[i][1] = { 0 };
-		translatePart[i][2] = { 0 };
-		rotatePart[i][0] = { 0 };
-		rotatePart[i][1] = { 0 };
-		rotatePart[i][2] = { 0 };
+		translatePart[i][0] = 0.f;
+		translatePart[i][1] = 0.f;
+		translatePart[i][2] = 0.f;
+		rotatePart[i][0] = 0.f;
+		rotatePart[i][1] = 0.f;
+		rotatePart[i][2] = 0.f;
 	}
 }
-void updateObj(int frame) {
-	switch (frame) {
-	case 0:
-		//����
-		angles[2] = -45;
-		//�k��
-
-		//�L
-		angles[13] = 45;
-
-		break;
-	case 1:
-	case 2:
-	case 3:
-		angles[1] += 10;
-		angles[12] -= 15;
-		position += 0.1;
-		break;
-	case 4:
-	case 5:
-	case 6:
-		angles[1] -= 10;
-		angles[12] += 15;
-		angles[13] -= 15;
-		position -= 0.1;
-		break;
-	case 7:
-	case 8:
-	case 9:
-		angles[1] -= 10;
-		angles[12] += 15;
-		angles[13] = 0;
-		position += 0.1;
-		break;
-	case 10:
-	case 11:
-	case 12:
-		angles[1] += 10;
-		angles[12] -= 15;
-		angles[13] += 15;
-		position -= 0.1;
-		break;
-	}
-}
-
 
 GLuint M_KaID;
 GLuint M_KdID;
 GLuint M_KsID;
 
-void init() {
-	isFrame = false;
-	pNo = 0;
+GLFWwindow* initProgramGLFW(ImFont* font1) {
+	resetModel();
+	ModelBackground = mat4(1.0);
+	ModelBackground = translate(ModelBackground, vec3(0, backGroundShiftUp, 0));
 	for (int i = 0; i < PARTSNUM; i++) {
 		translatePart[i][0] = { 0 };
 		translatePart[i][1] = { 0 };
@@ -287,15 +234,212 @@ void init() {
 		rotatePart[i][2] = { 0 };
 	}
 
+	//work backwards to correct the offset
+	initialOffset[LEFT_FOOT_TOES][0] -= initialOffset[LEFT_FOOT][0];
+	initialOffset[LEFT_FOOT_TOES][1] -= initialOffset[LEFT_FOOT][1];
+	initialOffset[LEFT_FOOT_TOES][2] -= initialOffset[LEFT_FOOT][2];
+
+	initialOffset[LEFT_FOOT][0] -= initialOffset[LEFT_LOWER_THIGH][0];
+	initialOffset[LEFT_FOOT][1] -= initialOffset[LEFT_LOWER_THIGH][1];
+	initialOffset[LEFT_FOOT][2] -= initialOffset[LEFT_LOWER_THIGH][2];
+
+	initialOffset[LEFT_LOWER_THIGH][0] -= initialOffset[LEFT_UPPER_THIGH][0];
+	initialOffset[LEFT_LOWER_THIGH][1] -= initialOffset[LEFT_UPPER_THIGH][1];
+	initialOffset[LEFT_LOWER_THIGH][2] -= initialOffset[LEFT_UPPER_THIGH][2];
+
+	initialOffset[RIGHT_FOOT_TOES][0] -= initialOffset[RIGHT_FOOT][0];
+	initialOffset[RIGHT_FOOT_TOES][1] -= initialOffset[RIGHT_FOOT][1];
+	initialOffset[RIGHT_FOOT_TOES][2] -= initialOffset[RIGHT_FOOT][2];
+
+	initialOffset[RIGHT_FOOT][0] -= initialOffset[RIGHT_LOWER_THIGH][0];
+	initialOffset[RIGHT_FOOT][1] -= initialOffset[RIGHT_LOWER_THIGH][1];
+	initialOffset[RIGHT_FOOT][2] -= initialOffset[RIGHT_LOWER_THIGH][2];
+
+	initialOffset[RIGHT_LOWER_THIGH][0] -= initialOffset[RIGHT_UPPER_THIGH][0];
+	initialOffset[RIGHT_LOWER_THIGH][1] -= initialOffset[RIGHT_UPPER_THIGH][1];
+	initialOffset[RIGHT_LOWER_THIGH][2] -= initialOffset[RIGHT_UPPER_THIGH][2];
+
+	initialOffset[LEFT_PALM][0] -= initialOffset[LEFT_LOWER_ARM][0];
+	initialOffset[LEFT_PALM][1] -= initialOffset[LEFT_LOWER_ARM][1];
+	initialOffset[LEFT_PALM][2] -= initialOffset[LEFT_LOWER_ARM][2];
+
+	initialOffset[LEFT_LOWER_ARM][0] -= initialOffset[LEFT_UPPER_ARM][0];
+	initialOffset[LEFT_LOWER_ARM][1] -= initialOffset[LEFT_UPPER_ARM][1];
+	initialOffset[LEFT_LOWER_ARM][2] -= initialOffset[LEFT_UPPER_ARM][2];
+
+	initialOffset[LEFT_UPPER_ARM][0] -= initialOffset[UPPER_BODY][0];
+	initialOffset[LEFT_UPPER_ARM][1] -= initialOffset[UPPER_BODY][1];
+	initialOffset[LEFT_UPPER_ARM][2] -= initialOffset[UPPER_BODY][2];
+
+	initialOffset[RIGHT_PALM][0] -= initialOffset[RIGHT_LOWER_ARM][0];
+	initialOffset[RIGHT_PALM][1] -= initialOffset[RIGHT_LOWER_ARM][1];
+	initialOffset[RIGHT_PALM][2] -= initialOffset[RIGHT_LOWER_ARM][2];
+
+	initialOffset[RIGHT_LOWER_ARM][0] -= initialOffset[RIGHT_UPPER_ARM][0];
+	initialOffset[RIGHT_LOWER_ARM][1] -= initialOffset[RIGHT_UPPER_ARM][1];
+	initialOffset[RIGHT_LOWER_ARM][2] -= initialOffset[RIGHT_UPPER_ARM][2];
+
+	initialOffset[RIGHT_UPPER_ARM][0] -= initialOffset[UPPER_BODY][0];
+	initialOffset[RIGHT_UPPER_ARM][1] -= initialOffset[UPPER_BODY][1];
+	initialOffset[RIGHT_UPPER_ARM][2] -= initialOffset[UPPER_BODY][2];
+
+	initialOffset[HEAD][0] -= initialOffset[NECK][0];
+	initialOffset[HEAD][1] -= initialOffset[NECK][1];
+	initialOffset[HEAD][2] -= initialOffset[NECK][2];
+
+	initialOffset[NECK][0] -= initialOffset[UPPER_BODY][0];
+	initialOffset[NECK][1] -= initialOffset[UPPER_BODY][1];
+	initialOffset[NECK][2] -= initialOffset[UPPER_BODY][2];
+
+	initialOffset[UPPER_BODY][0] -= initialOffset[ABS][0];
+	initialOffset[UPPER_BODY][1] -= initialOffset[ABS][1];
+	initialOffset[UPPER_BODY][2] -= initialOffset[ABS][2];
+
+	
+	if (!glfwInit()) {
+		cout << "Fail initialization of GLFW\n";
+		exit(EXIT_FAILURE);
+	}
+	glfwSetErrorCallback(error_callback);
+
+	//create window and context
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+	glfwWindowHint(GLFW_REFRESH_RATE, 60);
+
+	//fullscreen
+	//GLFWwindow* window = glfwCreateWindow(1920, 1080, "Project1 - Robocop", glfwGetPrimaryMonitor(), NULL);
+	
+	//windowed full screen
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
+	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
+	GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Project1 - Robocop", NULL, NULL);
+
+	if (!window) {
+		//window creation failed, check whether version apply with the machine
+		cout << "window creation failed\n";
+		exit(EXIT_FAILURE);
+	}
+
+	glfwSetKeyCallback(window, KeyboardGLFW);
+	glfwMakeContextCurrent(window);
+
+	//init glew
+	glewExperimental = TRUE;
+	GLenum err = glewInit();
+	if (err != GLEW_OK) {
+		cout << "glew init failed: " << glewGetErrorString(err) << endl;
+		exit(EXIT_FAILURE);
+	}
+
+
+
+	//multisample for polygons smooth
+	//glfw by default already use double buffering, depth buffer, and also (RGB?)
+	glEnable(GL_MULTISAMPLE);
+	//glDisable(GL_DEPTH_TEST);
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_LESS);
+	glEnable(GL_CULL_FACE);
+	glCullFace(GL_BACK);
+
+	//glEnable(GL_DEPTH_TEST);
+    //glDepthFunc(GL_LEQUAL);
+	//glDisable(GL_DEPTH_TEST);
+	//glDisable(GL_CULL_FACE);
+	//glEnable(GL_CULL_FACE);
+	//glCullFace(GL_BACK);
+	//glDisable(GL_CULL_FACE);
+
+	glfwSwapInterval(1); // the time wait for every change
+
+	isFrame = false;
+	pNo = 0;
+	animateMode = IDLE;
+	palmMode = OPEN;
+
+	//init imgui
+	 // Setup Dear ImGui context
+	IMGUI_CHECKVERSION();
+	ImGui::CreateContext();
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+
+	//set fonts
+	font1 = io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
+	if (font1 == NULL) {
+		cout << "load unsuccessful\n";
+	}
+	else {
+		cout << "load successful\n";
+	}
+	IM_ASSERT(font1 != NULL);
+
+	// Setup Dear ImGui style
+	ImGui::StyleColorsDark();
+
+	// Setup Platform / Renderer backends
+	ImGui_ImplGlfw_InitForOpenGL(window, true);
+	ImGui_ImplOpenGL3_Init(glsl_version);
+
 	//VAO
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
+
+	//EBO
+	glGenBuffers(1, &EBO);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
+
+	/*
+	//for lighting
+	glGenVertexArrays(1, &lightVAO);
+	glBindVertexArray(lightVAO);
+	glGenBuffers(1, &lightBoxBuffer);
+	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(lightModel), lightModel, GL_STATIC_DRAW);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
+	glGenBuffers(1, &lightBoxIndices);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recTriangleStripOrder), recTriangleStripOrder, GL_STATIC_DRAW);
+	ModelMatrixID = glGetUniformLocation(program, "ModelMatrix");
+	ViewMatrixID = glGetUniformLocation(program, "View");
+	ProjectionMatrixID = glGetUniformLocation(program, "Projection");
+	*/
+
+	/* 
+	//for shadow
+	glGenFramebuffers(1, &depthMapFBO);
+	glGenTextures(1, &depthMap);
+	glBindTexture(GL_TEXTURE_2D, depthMap); //2d texture similar to image
+	//depth map we only care to its depth, sp set format ot GL_DEPTH_COMPONENT, each texture we give it a width and height of 1024
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+	//bind the frame buffer to the generated depth frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+	//we only need depth information when rendering shadow, color will not affect, so no need to put color
+	//However, framebuffer object however needs color buffer, so we tell opengl we won't need color data by telling
+	//DrawBuffer and ReadBuffer to GL_NONE
+	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0); //unbind frame buffer
+	*/
 
 	ShaderInfo shaders[] = {
 		{ GL_VERTEX_SHADER, "DSPhong_Material.vp" },//vertex shader
 		{ GL_FRAGMENT_SHADER, "DSPhong_Material.fp" },//fragment shader
 		{ GL_NONE, NULL } };
 	program = LoadShaders(shaders);//Ū��shader
+
+	//ShaderInfo lightshaders[] = {
+	//	{ GL_VERTEX_SHADER, "light_box.vp" },//vertex shader
+	//	{ GL_FRAGMENT_SHADER, "light_box.fp" },//fragment shader
+	//	{ GL_NONE, NULL }
+	//};
+	//renderLightProgram = LoadShaders(lightshaders);
 
 	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
 
@@ -308,13 +452,13 @@ void init() {
 	M_KdID = M_KaID + 1;
 	M_KsID = M_KaID + 2;
 
-	Projection = glm::perspective(80.0f, 4.0f / 3.0f, 0.1f, 100.0f);
+	Projection = glm::perspective(80.0f, (float)(1920) / (1080), 0.1f, 100.f);
 	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
 
 	// Camera matrix
 	View = glm::lookAt(
-		glm::vec3(0, 10, 25), // Camera is at (0,10,25), in World Space
-		glm::vec3(0, 0, 0), // and looks at the origin
+		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp + 2, translatePart[CROTCH][2] + eyedistance), // Camera is at (0,0,20), in World Space), // Camera is at (0,10,25), in World Space
+		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
 	);
 
@@ -331,23 +475,66 @@ void init() {
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, 0, UBOsize);
 	glUniformBlockBinding(program, MatricesIdx, 0);
 
-
-	glClearColor(0.0, 0.0, 0.0, 1);//black screen
+	/*
+	printf("Vendor: %s\n", glGetString (GL_VENDOR));
+	printf("Renderer: %s\n", glGetString (GL_RENDERER));
+	printf("Version: %s\n", glGetString (GL_VERSION));
+	printf("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
+	*/
+	return window;
 }
 
 #define DOR(angle) (angle*3.1415/180);
-void display() {
-	glClearColor(0.7, 0.7, 0.7, 1);
+
+//void displayLightSource(mat4 view, mat4 proj) {
+//	cout << "Entering\n";
+//	glBindVertexArray(lightVAO);
+//	glUseProgram(renderLightProgram);
+//	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
+//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
+//	glEnableVertexAttribArray(0);
+//	mat4 model = mat4(1.0);
+//	model = translate(model, vec3(lightPosition[0], lightPosition[1], lightPosition[2]));
+//	model = scale(model, vec3(lightScale, lightScale, lightScale));
+//	glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
+//	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
+//	glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &proj[0][0]);
+//	glDrawElements(GL_TRIANGLE_STRIP, sizeof(recTriangleStripOrder) / sizeof(int), GL_UNSIGNED_INT, 0);
+//}
+
+void displayGLFW(GLFWwindow* window) {
+	//glClearColor(0.7, 0.7, 0.7, 1);
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+	ImGui::Render();
+	int display_w, display_h;
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	//glClear(GL_COLOR_BUFFER_BIT);
+
+	//rendering shadow first
+	//render to depth map
+	//glViewport(widthStart, heightStart, SHADOW_WIDTH, SHADOW_HEIGHT);
+	//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		//glClear(GL_DEPTH_BUFFER_BIT); //make sure that the depth buffer is empty, for light perspective depth
+	
+	//usual rendering
+	glViewport(widthStart, heightStart, 1920, 1080);
+	//if (renderLightBox) {
+	//	//displayLightSource(View, Projection);
+	//}
 
 	glBindVertexArray(VAO);
 	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
 	float eyey = DOR(eyeAngley);
 	View = lookAt(
-		vec3(eyedistance * sin(eyey), 2, eyedistance * cos(eyey)), // Camera is at (0,0,20), in World Space
-		vec3(0, 0, 0), // and looks at the origin
+		vec3(translatePart[CROTCH][0] + eyedistance * sin(eyey), translatePart[CROTCH][1] +robotShiftUp + 2, translatePart[CROTCH][2] + eyedistance * cos(eyey)), // Camera is at (0,0,20), in World Space
+		vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
 		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
 	);
+	Projection = perspective(FoV, (float)(1920 - widthStart) / (1080 - heightStart), nearClip, farClip);
+
 	myUpdateModel();
 	//update data to UBO for MVP
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
@@ -358,6 +545,129 @@ void display() {
 	GLuint offset[3] = { 0,0,0 };//offset for vertices , uvs , normals
 	for (int i = 0; i < PARTSNUM; i++) {
 		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Models[i][0][0]);
+		glBindBuffer(GL_ARRAY_BUFFER, VBO);
+		// 1rst attribute buffer : vertices
+		glEnableVertexAttribArray(0);
+
+
+		//handle extra part substitution
+		int currentIndex = i; //for later mtls accessing
+		if (palmMode == CLENCH && (i == 15||i==18)) {
+			GLuint tempOffset[3] = { offset[0], offset[1], offset[2] };
+			
+			if (i == 15) {
+				for (int j = 15; j < PARTSNUM; j++) {
+					tempOffset[0] += vertices_size[j] * sizeof(vec3);
+					tempOffset[1] += uvs_size[j] * sizeof(vec2);
+					tempOffset[2] += normals_size[j] * sizeof(vec3);
+				}
+				currentIndex = PARTSNUM;
+			}
+			else {
+				for (int j = 18; j < PARTSNUM+1; j++) {
+					tempOffset[0] += vertices_size[j] * sizeof(vec3);
+					tempOffset[1] += uvs_size[j] * sizeof(vec2);
+					tempOffset[2] += normals_size[j] * sizeof(vec3);
+				}
+				currentIndex = PARTSNUM+1;
+			}
+
+
+			glVertexAttribPointer(0,				//location
+				3,				//vec3
+				GL_FLOAT,			//type
+				GL_FALSE,			//not normalized
+				0,				//strip
+				(void*)tempOffset[0]);//buffer offset
+	//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
+			offset[0] += vertices_size[i] * sizeof(vec3);
+
+			// 2nd attribute buffer : UVs
+			glEnableVertexAttribArray(1);//location 1 :vec2 UV
+			glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+			glVertexAttribPointer(1,
+				2,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)tempOffset[1]);
+			//(location,vec2,type,�T�w�I,�s���I�������q,point)
+			offset[1] += uvs_size[i] * sizeof(vec2);
+
+			// 3rd attribute buffer : normals
+			glEnableVertexAttribArray(2);//location 2 :vec3 Normal
+			glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+			glVertexAttribPointer(2,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)tempOffset[2]);
+			//(location,vec3,type,�T�w�I,�s���I�������q,point)
+			offset[2] += normals_size[i] * sizeof(vec3);
+		}
+		else {
+
+			glVertexAttribPointer(0,				//location
+				3,				//vec3
+				GL_FLOAT,			//type
+				GL_FALSE,			//not normalized
+				0,				//strip
+				(void*)offset[0]);//buffer offset
+	//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
+			offset[0] += vertices_size[i] * sizeof(vec3);
+
+			// 2nd attribute buffer : UVs
+			glEnableVertexAttribArray(1);//location 1 :vec2 UV
+			glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+			glVertexAttribPointer(1,
+				2,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)offset[1]);
+			//(location,vec2,type,�T�w�I,�s���I�������q,point)
+			offset[1] += uvs_size[i] * sizeof(vec2);
+
+			// 3rd attribute buffer : normals
+			glEnableVertexAttribArray(2);//location 2 :vec3 Normal
+			glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+			glVertexAttribPointer(2,
+				3,
+				GL_FLOAT,
+				GL_FALSE,
+				0,
+				(void*)offset[2]);
+			//(location,vec3,type,�T�w�I,�s���I�������q,point)
+			offset[2] += normals_size[i] * sizeof(vec3);
+		}
+
+		int vertexIDoffset = 0;//glVertexID's offset 
+		string mtlname;//material name
+		vec3 Ks = vec3(1, 1, 1);//because .mtl excluding specular , so give it here.
+
+		for (int j = 0; j < mtls[currentIndex].size(); j++) {//
+			mtlname = mtls[currentIndex][j];
+			//find the material diffuse color in map:KDs by material name.
+			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
+			glUniform3fv(M_KsID, 1, &Ks[0]);
+			//          (primitive   , glVertexID base , vertex count    )
+			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[currentIndex][j + 1] * 3);
+			//we draw triangles by giving the glVertexID base and vertex count is face count*3
+			vertexIDoffset += faces[currentIndex][j + 1] * 3;//glVertexID's base offset is face count*3
+		}//end for loop for draw one part of the robot	
+
+	}//end for loop for updating and drawing model
+
+	//offset added by extra parts offset
+	for (int j = PARTSNUM; j < PARTSTOTAL; j++) {
+		offset[0] += vertices_size[j] * sizeof(vec3);
+		offset[1] += uvs_size[j] * sizeof(vec2);
+		offset[2] += normals_size[j] * sizeof(vec3);
+	}
+
+	if (useBackground) {
+		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &ModelBackground[0][0]);
 
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		// 1rst attribute buffer : vertices
@@ -369,7 +679,7 @@ void display() {
 			0,				//strip
 			(void*)offset[0]);//buffer offset
 //(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
-		offset[0] += vertices_size[i] * sizeof(vec3);
+		offset[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
 
 		// 2nd attribute buffer : UVs
 		glEnableVertexAttribArray(1);//location 1 :vec2 UV
@@ -381,7 +691,7 @@ void display() {
 			0,
 			(void*)offset[1]);
 		//(location,vec2,type,�T�w�I,�s���I�������q,point)
-		offset[1] += uvs_size[i] * sizeof(vec2);
+		offset[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
 
 		// 3rd attribute buffer : normals
 		glEnableVertexAttribArray(2);//location 2 :vec3 Normal
@@ -393,25 +703,26 @@ void display() {
 			0,
 			(void*)offset[2]);
 		//(location,vec3,type,�T�w�I,�s���I�������q,point)
-		offset[2] += normals_size[i] * sizeof(vec3);
+		offset[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
 
 		int vertexIDoffset = 0;//glVertexID's offset 
 		string mtlname;//material name
 		vec3 Ks = vec3(1, 1, 1);//because .mtl excluding specular , so give it here.
-		for (int j = 0; j < mtls[i].size(); j++) {//
-			mtlname = mtls[i][j];
+		for (int j = 0; j < mtls[PARTSNUM].size(); j++) {//
+			mtlname = mtls[PARTSTOTAL][j];
 			//find the material diffuse color in map:KDs by material name.
 			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
 			glUniform3fv(M_KsID, 1, &Ks[0]);
 			//          (primitive   , glVertexID base , vertex count    )
-			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[i][j + 1] * 3);
+			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[PARTSTOTAL][j + 1] * 3);
 			//we draw triangles by giving the glVertexID base and vertex count is face count*3
-			vertexIDoffset += faces[i][j + 1] * 3;//glVertexID's base offset is face count*3
-		}//end for loop for draw one part of the robot	
+			vertexIDoffset += faces[PARTSTOTAL][j + 1] * 3;//glVertexID's base offset is face count*3
+		}//end for loop for draw one part of the robot
+	}
 
-	}//end for loop for updating and drawing model
-	glFlush();//�j�����W����OpenGL commands
-	glutSwapBuffers();//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+	glfwSwapBuffers(window);//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
+	glfwPollEvents();
 }
 
 void Obj2Buffer() {
@@ -424,7 +735,14 @@ void Obj2Buffer() {
 		cout << partsList[i] << endl;
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
 	}
+	for (int i = 0; i < EXTRAPARTS; i++) {
+		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
+	}
 	//printf("%d\n",texture);
+	if (useBackground) {
+		loadMTL("../Assets/Obj/Sci_Fi_Corridor.mtl", Kds, Kas, Kss, Materials, texture);
+	}
+
 	for (int i = 0; i < Materials.size(); i++) {
 		string mtlname = Materials[i];
 		//  name            vec3
@@ -434,13 +752,30 @@ void Obj2Buffer() {
 	for (int i = 0; i < PARTSNUM; i++) {
 		load2Buffer("../Assets/Obj/"+partsList[i]+".obj", i);
 	}
+	for (int i = 0; i < EXTRAPARTS; i++) {
+		if (!renderBodyTop || !renderArm) {
+			continue;
+		}
+		load2Buffer("../Assets/Obj/" + extraBodyPart[i] + ".obj", i + PARTSNUM);
+	}
+	if (useBackground) {
+		load2Buffer("../Assets/Obj/Sci_Fi_Corridor.obj", PARTSTOTAL);
+	}
+
 	GLuint totalSize[3] = { 0,0,0 };
 	GLuint offset[3] = { 0,0,0 };
-	for (int i = 0; i < PARTSNUM; i++) {
+	for (int i = 0; i < PARTSTOTAL; i++) {
 		totalSize[0] += vertices_size[i] * sizeof(vec3);
 		totalSize[1] += uvs_size[i] * sizeof(vec2);
 		totalSize[2] += normals_size[i] * sizeof(vec3);
 	}
+	//cout << "s1\n";
+	if (useBackground) {
+		totalSize[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
+		totalSize[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
+		totalSize[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
+	}
+	//cout << "s2\n";
 	//generate vbo
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &uVBO);
@@ -454,9 +789,10 @@ void Obj2Buffer() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, nVBO);//VBO��target�OGL_ARRAY_BUFFER
 	glBufferData(GL_ARRAY_BUFFER, totalSize[2], NULL, GL_STATIC_DRAW);
-
-
-	for (int i = 0; i < PARTSNUM; i++) {
+	//cout << "s3\n";
+	int rep = PARTSTOTAL; 
+	//cout << "s4\n";
+	for (int i = 0; i < rep; i++) {
 		glBindBuffer(GL_COPY_WRITE_BUFFER, VBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, VBOs[i]);
 		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[i] * sizeof(vec3));
@@ -478,6 +814,29 @@ void Obj2Buffer() {
 		glInvalidateBufferData(uVBOs[i]);//free vbo
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 	}
+	if (useBackground) {
+		glBindBuffer(GL_COPY_WRITE_BUFFER, VBO);
+		glBindBuffer(GL_COPY_READ_BUFFER, VBOs[PARTSTOTAL]);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[PARTSTOTAL] * sizeof(vec3));
+		offset[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
+		glInvalidateBufferData(VBOs[PARTSTOTAL]);//free vbo
+		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+
+		glBindBuffer(GL_COPY_WRITE_BUFFER, uVBO);
+		glBindBuffer(GL_COPY_READ_BUFFER, uVBOs[PARTSTOTAL]);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[1], uvs_size[PARTSTOTAL] * sizeof(vec2));
+		offset[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
+		glInvalidateBufferData(uVBOs[PARTSTOTAL]);//free vbo
+		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+
+		glBindBuffer(GL_COPY_WRITE_BUFFER, nVBO);
+		glBindBuffer(GL_COPY_READ_BUFFER, nVBOs[PARTSTOTAL]);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[2], normals_size[PARTSTOTAL] * sizeof(vec3));
+		offset[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
+		glInvalidateBufferData(uVBOs[PARTSTOTAL]);//free vbo
+		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+	}
+
 	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 }
 
@@ -488,147 +847,126 @@ void myUpdateModel() {
 		Models[i] = mat4(1.0f);
 	}
 
+	//Body
+	Models[CROTCH] = translate(Models[CROTCH], vec3(0, robotShiftUp, 0));
+	Models[CROTCH] = translate(Models[CROTCH], vec3(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2]));
+	Models[CROTCH] = translate(Models[CROTCH], vec3(initialOffset[CROTCH][0], initialOffset[CROTCH][1], initialOffset[CROTCH][2]));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][2], vec3(0, 0, 1));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][1], vec3(0, 1, 0));
+	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][0], vec3(1, 0, 0));
+		//Abs
+		Models[ABS] = translate(Models[CROTCH], vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
+		Models[ABS] = translate(Models[ABS], vec3(initialOffset[ABS][0], initialOffset[ABS][1], initialOffset[ABS][2]));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][2], vec3(0, 0, 1));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][1], vec3(0, 1, 0));
+		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][0], vec3(1, 0, 0));
+			//Upper Body
+			Models[UPPER_BODY] = translate(Models[ABS], vec3(translatePart[UPPER_BODY][0], translatePart[UPPER_BODY][1], translatePart[UPPER_BODY][2]));
+			Models[UPPER_BODY] = translate(Models[UPPER_BODY], vec3(initialOffset[UPPER_BODY][0], initialOffset[UPPER_BODY][1], initialOffset[UPPER_BODY][2]));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][2], vec3(0, 0, 1));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][1], vec3(0, 1, 0));
+			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][0], vec3(1, 0, 0));
+				//Neck
+				Models[NECK] = translate(Models[UPPER_BODY], vec3(translatePart[NECK][0], translatePart[NECK][1], translatePart[NECK][2]));
+				Models[NECK] = translate(Models[NECK], vec3(initialOffset[NECK][0], initialOffset[NECK][1], initialOffset[NECK][2]));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][2], vec3(0, 0, 1));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][1], vec3(0, 1, 0));
+				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][0], vec3(1, 0, 0));
+					//Head
+					Models[HEAD] = translate(Models[NECK], vec3(translatePart[HEAD][0], translatePart[HEAD][1], translatePart[HEAD][2]));
+					Models[HEAD] = translate(Models[HEAD], vec3(initialOffset[HEAD][0], initialOffset[HEAD][1], initialOffset[HEAD][2]));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][2], vec3(0, 0, 1));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][1], vec3(0, 1, 0));
+					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][0], vec3(1, 0, 0));
+				//Right_Upper_arm
+				Models[RIGHT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
+				Models[RIGHT_UPPER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(initialOffset[RIGHT_UPPER_ARM][0], initialOffset[RIGHT_UPPER_ARM][1], initialOffset[RIGHT_UPPER_ARM][2]));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][2], vec3(0, 0, 1));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], vec3(0, 1, 0));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], vec3(1, 0, 0));
+					//Right_Lower_arm
+					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(translatePart[RIGHT_LOWER_ARM][0], translatePart[RIGHT_LOWER_ARM][1], translatePart[RIGHT_LOWER_ARM][2]));
+					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_LOWER_ARM], vec3(initialOffset[RIGHT_LOWER_ARM][0], initialOffset[RIGHT_LOWER_ARM][1], initialOffset[RIGHT_LOWER_ARM][2]));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], vec3(1, 0, 0));
+						//Right_Palm
+						Models[RIGHT_PALM] = translate(Models[RIGHT_LOWER_ARM], vec3(translatePart[RIGHT_PALM][0], translatePart[RIGHT_PALM][1], translatePart[RIGHT_PALM][2]));
+						Models[RIGHT_PALM] = translate(Models[RIGHT_PALM], vec3(initialOffset[RIGHT_PALM][0], initialOffset[RIGHT_PALM][1], initialOffset[RIGHT_PALM][2]));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][2], vec3(0, 0, 1));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][1], vec3(0, 1, 0));
+						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][0], vec3(1, 0, 0));
+				//LEFT_Upper_arm
+				Models[LEFT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[LEFT_UPPER_ARM][0], translatePart[LEFT_UPPER_ARM][1], translatePart[LEFT_UPPER_ARM][2]));
+				Models[LEFT_UPPER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(initialOffset[LEFT_UPPER_ARM][0], initialOffset[LEFT_UPPER_ARM][1], initialOffset[LEFT_UPPER_ARM][2]));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][2], vec3(0, 0, 1));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][1], vec3(0, 1, 0));
+				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][0], vec3(1, 0, 0));
+					//LEFT_Lower_arm
+					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(translatePart[LEFT_LOWER_ARM][0], translatePart[LEFT_LOWER_ARM][1], translatePart[LEFT_LOWER_ARM][2]));
+					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_LOWER_ARM], vec3(initialOffset[LEFT_LOWER_ARM][0], initialOffset[LEFT_LOWER_ARM][1], initialOffset[LEFT_LOWER_ARM][2]));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], vec3(1, 0, 0));
+						//LEFT_Palm
+						Models[LEFT_PALM] = translate(Models[LEFT_LOWER_ARM], vec3(translatePart[LEFT_PALM][0], translatePart[LEFT_PALM][1], translatePart[LEFT_PALM][2]));
+						Models[LEFT_PALM] = translate(Models[LEFT_PALM], vec3(initialOffset[LEFT_PALM][0], initialOffset[LEFT_PALM][1], initialOffset[LEFT_PALM][2]));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][2], vec3(0, 0, 1));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][1], vec3(0, 1, 0));
+						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][0], vec3(1, 0, 0));
 
+		//Left_Upper_thigh
+		Models[LEFT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = translate(Models[LEFT_UPPER_THIGH], vec3(initialOffset[LEFT_UPPER_THIGH][0], initialOffset[LEFT_UPPER_THIGH][1], initialOffset[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][2], vec3(0, 0, 1));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][1], vec3(0, 1, 0));
+		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][0], vec3(1, 0, 0));
+			//LEFT_lower_thigh
+			Models[LEFT_LOWER_THIGH] = translate(Models[LEFT_UPPER_THIGH], vec3(translatePart[LEFT_LOWER_THIGH][0], translatePart[LEFT_LOWER_THIGH][1], translatePart[LEFT_LOWER_THIGH][2]));
+			Models[LEFT_LOWER_THIGH] = translate(Models[LEFT_LOWER_THIGH], vec3(initialOffset[LEFT_LOWER_THIGH][0], initialOffset[LEFT_LOWER_THIGH][1], initialOffset[LEFT_LOWER_THIGH][2]));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][2], vec3(0, 0, 1));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][1], vec3(0, 1, 0));
+			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][0], vec3(1, 0, 0));
+				//LEFT_foot
+				Models[LEFT_FOOT] = translate(Models[LEFT_LOWER_THIGH], vec3(translatePart[LEFT_FOOT][0], translatePart[LEFT_FOOT][1], translatePart[LEFT_FOOT][2]));
+				Models[LEFT_FOOT] = translate(Models[LEFT_FOOT], vec3(initialOffset[LEFT_FOOT][0], initialOffset[LEFT_FOOT][1], initialOffset[LEFT_FOOT][2]));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][2], vec3(0, 0, 1));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][1], vec3(0, 1, 0));
+				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][0], vec3(1, 0, 0));
+					//LEFT_foot_toes
+					Models[LEFT_FOOT_TOES] = translate(Models[LEFT_FOOT], vec3(translatePart[LEFT_FOOT_TOES][0], translatePart[LEFT_FOOT_TOES][1], translatePart[LEFT_FOOT_TOES][2]));
+					Models[LEFT_FOOT_TOES] = translate(Models[LEFT_FOOT_TOES], vec3(initialOffset[LEFT_FOOT_TOES][0], initialOffset[LEFT_FOOT_TOES][1], initialOffset[LEFT_FOOT_TOES][2]));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][2], vec3(0, 0, 1));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][1], vec3(0, 1, 0));
+					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][0], vec3(1, 0, 0));
+		//right_upper_thigh
+		Models[RIGHT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(initialOffset[RIGHT_UPPER_THIGH][0], initialOffset[RIGHT_UPPER_THIGH][1], initialOffset[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], vec3(0, 0, 1));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
+			//Right_lower_thigh
+			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(translatePart[RIGHT_LOWER_THIGH][0], translatePart[RIGHT_LOWER_THIGH][1], translatePart[RIGHT_LOWER_THIGH][2]));
+			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_LOWER_THIGH], vec3(initialOffset[RIGHT_LOWER_THIGH][0], initialOffset[RIGHT_LOWER_THIGH][1], initialOffset[RIGHT_LOWER_THIGH][2]));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][2], vec3(0, 0, 1));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], vec3(0, 1, 0));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], vec3(1, 0, 0));
+				//Right_foot
+				Models[RIGHT_FOOT] = translate(Models[RIGHT_LOWER_THIGH], vec3(translatePart[RIGHT_FOOT][0], translatePart[RIGHT_FOOT][1], translatePart[RIGHT_FOOT][2]));
+				Models[RIGHT_FOOT] = translate(Models[RIGHT_FOOT], vec3(initialOffset[RIGHT_FOOT][0], initialOffset[RIGHT_FOOT][1], initialOffset[RIGHT_FOOT][2]));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][2], vec3(0, 0, 1));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], vec3(0, 1, 0));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], vec3(1, 0, 0));
+					//Right_foot_toes
+					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT], vec3(translatePart[RIGHT_FOOT_TOES][0], translatePart[RIGHT_FOOT_TOES][1], translatePart[RIGHT_FOOT_TOES][2]));
+					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT_TOES], vec3(initialOffset[RIGHT_FOOT_TOES][0], initialOffset[RIGHT_FOOT_TOES][1], initialOffset[RIGHT_FOOT_TOES][2]));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
 		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
-		Models[i] = translate(Models[i], vec3(initialOffset[i][0], initialOffset[i][1], initialOffset[i][2]));
 	}
-}
-
-void updateModels() {
-	mat4 Rotatation[PARTSNUM];
-	mat4 Translation[PARTSNUM];
-	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = mat4(1.0f);
-		Rotatation[i] = mat4(1.0f);
-		Translation[i] = mat4(1.0f);
-	}
-	float r, pitch, yaw, roll;
-	float alpha, beta, gamma;
-
-	//Body
-	beta = angleMain;
-	Rotatation[0] = rotate(beta, 0, 1, 0);
-	Translation[0] = translate(0, 2.9 + position, 0);
-	Models[0] = Translation[0] * Rotatation[0];
-	//����=======================================================
-	//���W���u
-	yaw = DOR(beta); r = 3.7;
-	alpha = angles[1];
-	gamma = 10;
-	Rotatation[1] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);//�V�e����*�V�k����
-	Translation[1] = translate(3.7, 1, -0.5);
-
-	Models[1] = Models[0] * Translation[1] * Rotatation[1];
-
-	//���ӻH
-	Rotatation[4] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);//�V�e����*�V�k����
-	Translation[4] = translate(3.7, 1, -0.5);//�첾�쥪�W���u�B
-	Models[4] = Models[0] * Translation[1] * Rotatation[1];
-
-	//���U���u
-	pitch = DOR(alpha); r = 3;
-	roll = DOR(gamma);
-	static int i = 0;
-	i += 5;
-	alpha = angles[2] - 20;
-	//�W���u+�U���u�V�e����*�V�k����
-	Rotatation[2] = rotate(alpha, 1, 0, 0);
-	//��x�b�첾�H�W���u���b�|����P��:translate(0,r*cos,r*sin)
-	//��z�b�첾�H�W���u���b�|����:translate(r*sin,-rcos,0)
-	Translation[2] = translate(0, -3, 0);
-
-	Models[2] = Models[1] * Translation[2] * Rotatation[2];
-
-
-	pitch = DOR(alpha);
-	//b = DOR(angles[2]);
-	roll = DOR(gamma);
-	//��x���׻P�U���u�ۦP
-	//Rotatation[3] = Rotatation[2];
-	//��x�b�첾�H�W���u���b�|����P��:translate(0,r*cos,r*sin) ,���׬��W���u+�U���u
-	Translation[3] = translate(0, -4.8, 0);
-	Models[3] = Models[2] * Translation[3] * Rotatation[3];
-	//============================================================
-	//�Y==========================================================
-	Translation[5] = translate(0, 3.9, -0.5);
-	Models[5] = Models[0] * Translation[5] * Rotatation[5];
-	//============================================================
-	//�k��=========================================================
-	gamma = -10; alpha = angles[6] = -angles[1];
-	Rotatation[6] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[6] = translate(-3.9, 1.7, -0.2);
-	Models[6] = Models[0] * Translation[6] * Rotatation[6];
-
-	Rotatation[9] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[9] = translate(-3.9, 1.1, -0.2);
-	Models[9] = Models[0] * Translation[9] * Rotatation[9];
-
-	angles[7] = angles[2];
-	pitch = DOR(alpha); r = -3;
-	roll = DOR(gamma);
-	alpha = angles[7] - 20;
-	Rotatation[7] = rotate(alpha, 1, 0, 0);
-	Translation[7] = translate(0, -3, 0);
-	Models[7] = Models[6] * Translation[7] * Rotatation[7];
-
-	pitch = DOR(alpha);
-	//b = DOR(angles[7]);
-	roll = DOR(gamma);
-	Translation[8] = translate(0, -6, 0);
-	Models[8] = Models[7] * Translation[8] * Rotatation[8];
-	//=============================================================
-	//back&DBody===================================================
-	Translation[10] = translate(0, 2, -4.5);
-	Models[10] = Models[0] * Translation[10] * Rotatation[10];
-
-	Translation[11] = translate(0, -5.3, 0);
-	Models[11] = Models[0] * Translation[11] * Rotatation[11];
-	//=============================================================
-	//���}
-	alpha = angles[12]; gamma = 10;
-	Rotatation[12] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[12] = translate(1.8, -4.5, 0);
-	Models[12] = Translation[12] * Rotatation[12] * Models[12];
-
-	pitch = DOR(alpha); r = -7;
-	roll = DOR(gamma);
-	alpha = angles[13] + angles[12];
-	Translation[13] = translate(-r * sin(roll), r * cos(pitch), r * sin(pitch)) * Translation[12];
-	Rotatation[13] = rotate(alpha, 1, 0, 0);
-	Models[13] = Translation[13] * Rotatation[13] * Models[13];
-
-	pitch = DOR(alpha); r = -5;
-	//b = DOR(angles[13]);
-	roll = DOR(gamma);
-	Translation[14] = translate(-(r + 2) * sin(roll), r * cos(pitch), r * sin(pitch) - 1) * Translation[13];
-	Rotatation[14] = rotate(alpha, 1, 0, 0);
-	Models[14] = Translation[14] * Rotatation[14] * Models[14];
-	//=============================================================
-	//�k�}
-	alpha = angles[15] = -angles[12];
-	gamma = -10;
-	Rotatation[15] = rotate(alpha, 1, 0, 0) * rotate(gamma, 0, 0, 1);
-	Translation[15] = translate(-1.8, -4.5, 0);
-	Models[15] = Translation[15] * Rotatation[15] * Models[15];
-
-	angles[16] = angles[13];
-	pitch = DOR(alpha); r = -7;
-	roll = DOR(gamma);
-	alpha = angles[16] + angles[15];
-	Rotatation[16] = rotate(alpha, 1, 0, 0);
-	Translation[16] = translate(-r * sin(roll), r * cos(pitch), r * sin(pitch)) * Translation[15];
-	Models[16] = Translation[16] * Rotatation[16] * Models[16];
-
-	pitch = DOR(alpha); r = -5;
-	//b = DOR(angles[16]);
-	roll = DOR(gamma);
-	alpha = angles[15] + angles[16];
-	Translation[17] = translate(-(r + 2) * sin(roll), r * cos(pitch), r * sin(pitch) - 0.5) * Translation[16];
-	Rotatation[17] = rotate(alpha, 1, 0, 0);
-	Models[17] = Translation[17] * Rotatation[17] * Models[17];
-	//=============================================================
 }
 
 void load2Buffer(string obj, int i) {
@@ -639,6 +977,7 @@ void load2Buffer(string obj, int i) {
 
 	const char* c = obj.c_str();
 	bool res = loadOBJ(c, vertices, uvs, normals, faces[i], mtls[i]);
+	cout << "load finished!\n";
 	if (!res) printf("load failed\n");
 
 	//glUseProgram(program);
@@ -663,104 +1002,157 @@ void load2Buffer(string obj, int i) {
 	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &normals[0], GL_STATIC_DRAW);
 	normals_size[i] = normals.size();
 }
-mat4 translate(float x, float y, float z) {
-	vec4 t = vec4(x, y, z, 1);//w = 1 ,�hx,y,z=0�ɤ]��translate
-	vec4 c1 = vec4(1, 0, 0, 0);
-	vec4 c2 = vec4(0, 1, 0, 0);
-	vec4 c3 = vec4(0, 0, 1, 0);
-	mat4 M = mat4(c1, c2, c3, t);
-	return M;
-}
-mat4 scale(float x, float y, float z) {
-	vec4 c1 = vec4(x, 0, 0, 0);
-	vec4 c2 = vec4(0, y, 0, 0);
-	vec4 c3 = vec4(0, 0, z, 0);
-	vec4 c4 = vec4(0, 0, 0, 1);
-	mat4 M = mat4(c1, c2, c3, c4);
-	return M;
-}
-
-mat4 rotate(float angle, float x, float y, float z) {
-	float r = DOR(angle);
-	mat4 M = mat4(1);
-
-	vec4 c1 = vec4(cos(r) + (1 - cos(r)) * x * x, (1 - cos(r)) * y * x + sin(r) * z, (1 - cos(r)) * z * x - sin(r) * y, 0);
-	vec4 c2 = vec4((1 - cos(r)) * y * x - sin(r) * z, cos(r) + (1 - cos(r)) * y * y, (1 - cos(r)) * z * y + sin(r) * x, 0);
-	vec4 c3 = vec4((1 - cos(r)) * z * x + sin(r) * y, (1 - cos(r)) * z * y - sin(r) * x, cos(r) + (1 - cos(r)) * z * z, 0);
-	vec4 c4 = vec4(0, 0, 0, 1);
-	M = mat4(c1, c2, c3, c4);
-	return M;
-}
-void Keyboard(unsigned char key, int x, int y) {
+//Keyboard for GLFW
+void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	switch (key) {
-	case 'g':
-		rotateCentral += 1;
+	case GLFW_KEY_Q: 
+		rotatePart[LEFT_UPPER_ARM][0] += 3;
 		break;
-	case 'h': 
-		rotateCentral -= 1;
+	case GLFW_KEY_E:
+		rotatePart[LEFT_UPPER_ARM][0] -= 3;
 		break;
-	case '1':
-		angleMain += 5;
-		if (angleMain >= 360) angleMain = 0;
-		printf("beta:%f\n", angleMain);
+	case GLFW_KEY_R:
+		rotatePart[LEFT_UPPER_ARM][2] += 3;
 		break;
-	case '2':
-		angleMain -= 5;
-		if (angleMain <= 0) angleMain = 360;
-		printf("beta:%f\n", angleMain);
+	case GLFW_KEY_T:
+		rotatePart[LEFT_UPPER_ARM][2] -= 3;
 		break;
-	case 'w':
+	case GLFW_KEY_Y:
+		rotatePart[LEFT_UPPER_ARM][1] += 3;
+		break;
+	case GLFW_KEY_U:
+		rotatePart[LEFT_UPPER_ARM][1] -= 3;
+		break;
+	case GLFW_KEY_W:
+
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 180;
+		rotatePart[CROTCH][2] = 0;
+
+		//translatePart[CROTCH][0] += 0;
+		//translatePart[CROTCH][1] += 0;
+		translatePart[CROTCH][2] -= WALKSPEED;
+
+		break;
+	case GLFW_KEY_A:
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = -90;
+		rotatePart[CROTCH][2] = 0;
+
+		translatePart[CROTCH][0] -= WALKSPEED;
+		//translatePart[CROTCH][1] += 0;
+		//translatePart[CROTCH][2] += 0;
+		break;
+	case GLFW_KEY_D:
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 90;
+		rotatePart[CROTCH][2] = 0;
+
+		translatePart[CROTCH][0] += WALKSPEED;
+		//translatePart[CROTCH][1] += 0;
+		//translatePart[CROTCH][2] += 0;
+		break;
+	case GLFW_KEY_S:
+
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 0;
+		rotatePart[CROTCH][2] = 0;
+
+		//translatePart[CROTCH][0] += 0;
+		//translatePart[CROTCH][1] += 0;
+		translatePart[CROTCH][2] += WALKSPEED;
+		break;
+	case GLFW_KEY_ESCAPE:
+		glfwSetWindowShouldClose(window, GLFW_TRUE);
+		break;
+	case GLFW_KEY_G:
+		rotatePart[LEFT_UPPER_ARM][0] += 4;
+		break;
+	case GLFW_KEY_H:
+		rotatePart[LEFT_UPPER_ARM][0] -= 4;
+		break;
+	case GLFW_KEY_J:
+		rotatePart[LEFT_LOWER_ARM][0] += 4;
+		break;
+	case GLFW_KEY_K:
+		rotatePart[LEFT_LOWER_ARM][0] -= 4;
+		break;
+	case GLFW_KEY_UP:
 		eyedistance -= 0.2;
+		clip(eyedistance, 5, 40);
 		break;
-	case 's':
+	case GLFW_KEY_DOWN:
 		eyedistance += 0.2;
+		clip(eyedistance, 5, 40);
 		break;
-	case 'a':
+	case GLFW_KEY_LEFT:
 		eyeAngley -= 10;
 		break;
-	case 'd':
+	case GLFW_KEY_RIGHT:
 		eyeAngley += 10;
 		break;
-	case 'r':
-		angles[1] -= 5;
-		if (angles[1] == -360) angles[1] = 0;
-		movey = 0;
-		movex = 0;
+	case GLFW_KEY_0:
+		palmMode = CLENCH;
 		break;
-	case 't':
-		angles[2] -= 5;
-		if (angles[2] == -360) angles[2] = 0;
-		movey = 0;
-		movex = 0;
-		break;
-	case 'q':
-		break;
-	case 'e':
-		break;
-	}
-	glutPostRedisplay();
-}
-void menuEvents(int option) {}
-void ActionMenuEvents(int option) {
-	switch (option) {
-	case 0:
-		action = IDLE;
-		break;
-	case 1:
-		action = WALK;
+	case GLFW_KEY_1:
+		palmMode = OPEN;
 		break;
 	}
 }
-void ModeMenuEvents(int option) {
-	switch (option) {
-	case 0:
-		glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-		break;
-	case 1:
-		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
-		break;
+
+float clip(float &var, float min, float max) {
+	if (var < min) {
+		var = min;
+	}
+	else if (var > max) {
+		var = max;
+	}
+	return var;
+}
+
+float getTime()
+{
+	return glfwGetTime();
+}
+
+float clampValMaxMin(float x, float clampToMax, float clampToMin)
+{
+	if (x >= clampToMax)
+	{
+		return clampToMax;
+	}
+	else if (x <= clampToMin)
+	{
+		return clampToMin;
+	}
+	else
+	{
+		return x;
 	}
 }
-void ShaderMenuEvents(int option) {
-	pNo = option;
+
+float clampValMax(float x, float clampToMax)
+{
+	if (x >= clampToMax)
+	{
+		return clampToMax;
+	}
+	else
+	{
+		return x;
+	}
 }
+
+float clampValMin(float x, float clampToMin)
+{
+	if (x <= clampToMin)
+	{
+		return clampToMin;
+	}
+	else
+	{
+		return x;
+	}
+}
+
+
