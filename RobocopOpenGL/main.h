@@ -4,7 +4,6 @@
 #include <vector>
 #include <map>
 #include <string>
-using namespace std;
 //#include <cmath>
 
 //for imgui
@@ -26,6 +25,8 @@ using namespace std;
 #include <chrono>
 #include <thread>
 
+
+using namespace std;
 using namespace glm;
 
 
@@ -122,7 +123,6 @@ void Obj2Buffer();
 void load2Buffer( string obj,int);
 
 //animation purposes
-void walk();
 float walk();
 void squat();
 void jumpingJack();

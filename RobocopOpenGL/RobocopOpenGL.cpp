@@ -78,8 +78,9 @@ int main(int argc, char** argv) {
 		//push font
 		ImGui::PushFont(font1);
 
-		if (show_demo_window)
+		if (show_demo_window) {
 			ImGui::ShowDemoWindow(&show_demo_window);
+		}
 
 		{
 			ImGui::SetNextWindowSizeConstraints(ImVec2(400,1080), ImVec2(400,1080)); //width x height fixed
@@ -287,6 +288,11 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	initialOffset[UPPER_BODY][2] -= initialOffset[ABS][2];
 
 	
+	for (int i = 0; i < PARTSNUM; i++) {
+		initialOffset[i][0] *= -1;
+		initialOffset[i][2] *= -1;
+	}
+
 	if (!glfwInit()) {
 		cout << "Fail initialization of GLFW\n";
 		exit(EXIT_FAILURE);
@@ -319,7 +325,6 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	isOpen = false;
 	squat1 = false;
 	squat2 = false;
-}
 
 	glfwSetKeyCallback(window, KeyboardGLFW);
 	glfwMakeContextCurrent(window);
@@ -1118,6 +1123,18 @@ float clip(float &var, float min, float max) {
 float getTime()
 {
 	return glfwGetTime();
+}
+
+float clampValMin(float x, float clampToMin)
+{
+	if (x <= clampToMin)
+	{
+		return clampToMin;
+	}
+	else
+	{
+		return x;
+	}
 }
 
 float clampValMaxMin(float x, float clampToMax, float clampToMin)
