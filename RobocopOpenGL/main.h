@@ -22,6 +22,10 @@ using namespace std;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+#include <thread>
+
 using namespace glm;
 
 
@@ -54,14 +58,18 @@ using namespace glm;
 
 #define WALKSPEED 1;
 
+#define M_PI 3.14;
+
+#define TARGET_FPS 60;
+
 //for debugging
-bool renderBodyTop = false;
-bool renderArm = false;
-bool renderHead = false;
+bool renderBodyTop = true;
+bool renderArm = true;
+bool renderHead = true;
 bool renderLeg = true;
 
 //background usage
-bool useBackground = true;
+bool useBackground = false;
 mat4 ModelBackground;
 
 //for imgui usage
@@ -92,6 +100,7 @@ void myUpdateModel();
 void ChangeSize(int w,int h);
 void Mouse(int button,int state,int x,int y);
 void myTimerFunc(int);
+void resetModel();
 
 //for using with GLFW
 GLFWwindow* initProgramGLFW();
@@ -107,7 +116,7 @@ void Obj2Buffer();
 void load2Buffer( string obj,int);
 
 //animation purposes
-void walk();
+float walk();
 void squat();
 void jumpingJack();
 void gangnamStyle();
@@ -169,3 +178,31 @@ mat4 Models[PARTSNUM];
 #define rightFoot 3
 int mode;
 int action;
+
+float clampValMin(float x, float clampToMin);
+float clampValMax(float x, float clampToMax);
+
+
+float startTime;
+///////////
+// For walk
+bool r_isFr = false;
+
+bool r_isUp			= true; // upper leg
+bool r_isUp2		= false; // lower leg
+bool r_isUp3		= false; // foot
+bool r_isUp4		= true; // foot toes
+bool r_is_return	= false;
+
+bool l_isUp = false; // upper leg
+bool l_isUp2 = false; // lower leg
+bool l_isUp3 = false; // foot
+bool l_isUp4 = true; // foot toes
+bool l_is_return = false;
+
+///////////
+// For Jumping Jack
+bool isOpen = false;
+bool squat1 = false;
+bool squat2 = false;
+bool pause	= true;
