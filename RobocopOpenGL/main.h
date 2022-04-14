@@ -65,20 +65,23 @@ using namespace glm;
 //for debugging
 bool renderBodyTop = true;
 bool renderArm = true;
-bool renderHead = false;
+bool renderHead = true;
 bool renderLeg = true;
 
 //background usage
-bool useBackground = false;
+bool useBackground = true;
 mat4 ModelBackground;
+float backGroundShiftUp = 30.02f;
+float robotShiftUp = 9.653 + 1.064;
 
 //for imgui usage
 
 const char* glsl_version = "#version 130";
 bool show_demo_window = true;
 bool show_another_window = false;
-ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+ImVec4 clear_color = ImVec4(0.0f, 0.0f, 0.0f, 1.00f);
 
+bool changePalm = false;
 enum PALMMODE {
 	OPEN, 
 	CLENCH
@@ -100,6 +103,9 @@ void myUpdateModel();
 void ChangeSize(int w,int h);
 void Mouse(int button,int state,int x,int y);
 void myTimerFunc(int);
+
+//for using with GLFW
+GLFWwindow* initProgramGLFW(ImFont*);
 void resetModel();
 
 //for using with GLFW
@@ -116,6 +122,7 @@ void Obj2Buffer();
 void load2Buffer( string obj,int);
 
 //animation purposes
+void walk();
 float walk();
 void squat();
 void jumpingJack();
@@ -123,8 +130,6 @@ void gangnamStyle();
 void moonWalk();
 void pushUp();
 void sitUp();
-
-//additional tools function
 float clip(float &var, float min, float max);
 
 bool isFrame;
@@ -138,31 +143,73 @@ GLuint uVBO;
 GLuint nVBO;
 GLuint mVBO;
 GLuint UBO;
-GLuint VBOs[PARTSNUM+1];
-GLuint uVBOs[PARTSNUM+1];
-GLuint nVBOs[PARTSNUM+1];
+GLuint VBOs[PARTSTOTAL+1];
+GLuint uVBOs[PARTSTOTAL+1];
+GLuint nVBOs[PARTSTOTAL+1];
 GLuint program;
 int pNo;
 
 float rotateCentral = 180.f;
 
-float angles[PARTSNUM];
+
+//for viewing
 float position = 0.0;
-float angleMain= 0.0;
 float eyeAngley = 0.0;
 float eyedistance = 20.0;
-float size = 1;
-GLfloat movex,movey;
+float FoV = 80; //in degree, between 30-90
+float nearClip = 0.1;
+float farClip = 200;
+
+
 GLint MatricesIdx;
 GLuint ModelID;
+int vertices_size[PARTSTOTAL+1];
+int uvs_size[PARTSTOTAL+1];
+int normals_size[PARTSTOTAL+1];
+int materialCount[PARTSTOTAL+1];
 
-int vertices_size[PARTSNUM+1];
-int uvs_size[PARTSNUM+1];
-int normals_size[PARTSNUM+1];
-int materialCount[PARTSNUM+1];
+//for shadow and lighting
+//void displayLightSource(mat4,mat4);
+//GLuint lightVAO; //create a different VAO for lighting, so it won't get mix up with object VAO, for easier debugging
+//bool renderLightBox = true;
+//const float lightScale = 0.00002;
+//GLuint lightBoxBuffer;
+//GLuint lightBoxIndices;
+//GLuint ModelMatrixID;
+//GLuint ViewMatrixID;
+//GLuint ProjectionMatrixID;
+//const float lightModel[] = {
+//	//x-y-z element
+//	//0 = right up back
+//	//1 = left up back
+//	//2 = right up front
+//	//3 = left up front
+//	//4 = right bottom back
+//	//5 = left bottom back
+//	//6 = left bottom front
+//	//7 = right bottom front
+//	1,1,-1,
+//	-1,1,-1,
+//	1,1,1,
+//	-1,1,1,
+//	1,-1,-1,
+//	-1,-1,-1,
+//	-1,-1,1,
+//	1,-1,1
+//};
+//static int recTriangleStripOrder[] = {
+//	//https://stackoverflow.com/questions/28375338/cube-using-single-gl-triangle-strip
+//	//obtained from here
+//	3,2,6,7,4,2,0,3,1,6,5,4,1,0
+//};
+//float lightPosition[] = { 0,1,1 };
+//GLuint renderLightProgram;
+//GLuint depthMapFBO; //for frame buffer
+//const unsigned int SHADOW_WIDTH = 1024, SHADOW_HEIGHT = 1024; 
+//unsigned int depthMap; //for textures
 
-std::vector<std::string> mtls[PARTSNUM+1];//use material
-std::vector<unsigned int> faces[PARTSNUM+1];//face count
+std::vector<std::string> mtls[PARTSTOTAL+1];//use material
+std::vector<unsigned int> faces[PARTSTOTAL+1];//face count
 map<string,vec3> KDs;//mtl-name&Kd
 map<string,vec3> KSs;//mtl-name&Ks
 
@@ -171,6 +218,9 @@ mat4 View;
 mat4 Model;
 mat4 Models[PARTSNUM];
 
+//for monitor
+int widthStart = 400;
+int heightStart = 0;
 
 #define leftHand 0
 #define rightHand 1
