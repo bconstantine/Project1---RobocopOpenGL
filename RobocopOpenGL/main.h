@@ -65,7 +65,7 @@ using namespace glm;
 //for debugging
 bool renderBodyTop = true;
 bool renderArm = true;
-bool renderHead = true;
+bool renderHead = false;
 bool renderLeg = true;
 
 //background usage

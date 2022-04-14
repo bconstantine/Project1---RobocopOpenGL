@@ -771,15 +771,17 @@ void myUpdateModel() {
 				//Right_Upper_arm
 				Models[RIGHT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
 				Models[RIGHT_UPPER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(initialOffset[RIGHT_UPPER_ARM][0], initialOffset[RIGHT_UPPER_ARM][1], initialOffset[RIGHT_UPPER_ARM][2]));
-				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], vec3(1, 0, 0));
-				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], vec3(0, 1, 0));
 				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][2], vec3(0, 0, 1));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], vec3(0, 1, 0));
+				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], vec3(1, 0, 0));
+				
 					//Right_Lower_arm
 					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(translatePart[RIGHT_LOWER_ARM][0], translatePart[RIGHT_LOWER_ARM][1], translatePart[RIGHT_LOWER_ARM][2]));
 					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_LOWER_ARM], vec3(initialOffset[RIGHT_LOWER_ARM][0], initialOffset[RIGHT_LOWER_ARM][1], initialOffset[RIGHT_LOWER_ARM][2]));
-					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], vec3(1, 0, 0));
-					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], vec3(0, 1, 0));
 					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], vec3(1, 0, 0));
+					
 						//Right_Palm
 						Models[RIGHT_PALM] = translate(Models[RIGHT_LOWER_ARM], vec3(translatePart[RIGHT_PALM][0], translatePart[RIGHT_PALM][1], translatePart[RIGHT_PALM][2]));
 						Models[RIGHT_PALM] = translate(Models[RIGHT_PALM], vec3(initialOffset[RIGHT_PALM][0], initialOffset[RIGHT_PALM][1], initialOffset[RIGHT_PALM][2]));
@@ -795,9 +797,9 @@ void myUpdateModel() {
 					//LEFT_Lower_arm
 					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(translatePart[LEFT_LOWER_ARM][0], translatePart[LEFT_LOWER_ARM][1], translatePart[LEFT_LOWER_ARM][2]));
 					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_LOWER_ARM], vec3(initialOffset[LEFT_LOWER_ARM][0], initialOffset[LEFT_LOWER_ARM][1], initialOffset[LEFT_LOWER_ARM][2]));
-					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], vec3(1, 0, 0));
-					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], vec3(0, 1, 0));
 					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][2], vec3(0, 0, 1));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], vec3(0, 1, 0));
+					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], vec3(1, 0, 0));			
 						//LEFT_Palm
 						Models[LEFT_PALM] = translate(Models[LEFT_LOWER_ARM], vec3(translatePart[LEFT_PALM][0], translatePart[LEFT_PALM][1], translatePart[LEFT_PALM][2]));
 						Models[LEFT_PALM] = translate(Models[LEFT_PALM], vec3(initialOffset[LEFT_PALM][0], initialOffset[LEFT_PALM][1], initialOffset[LEFT_PALM][2]));
@@ -831,27 +833,29 @@ void myUpdateModel() {
 		//right_upper_thigh
 		Models[RIGHT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
 		Models[RIGHT_UPPER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(initialOffset[RIGHT_UPPER_THIGH][0], initialOffset[RIGHT_UPPER_THIGH][1], initialOffset[RIGHT_UPPER_THIGH][2]));
-		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
-		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
 		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], vec3(0, 0, 1));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
+		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
+		
 			//Right_lower_thigh
 			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(translatePart[RIGHT_LOWER_THIGH][0], translatePart[RIGHT_LOWER_THIGH][1], translatePart[RIGHT_LOWER_THIGH][2]));
 			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_LOWER_THIGH], vec3(initialOffset[RIGHT_LOWER_THIGH][0], initialOffset[RIGHT_LOWER_THIGH][1], initialOffset[RIGHT_LOWER_THIGH][2]));
-			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], vec3(1, 0, 0));
-			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], vec3(0, 1, 0));
 			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][2], vec3(0, 0, 1));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], vec3(0, 1, 0));
+			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], vec3(1, 0, 0));
 				//Right_foot
 				Models[RIGHT_FOOT] = translate(Models[RIGHT_LOWER_THIGH], vec3(translatePart[RIGHT_FOOT][0], translatePart[RIGHT_FOOT][1], translatePart[RIGHT_FOOT][2]));
 				Models[RIGHT_FOOT] = translate(Models[RIGHT_FOOT], vec3(initialOffset[RIGHT_FOOT][0], initialOffset[RIGHT_FOOT][1], initialOffset[RIGHT_FOOT][2]));
-				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], vec3(1, 0, 0));
-				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], vec3(0, 1, 0));
 				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][2], vec3(0, 0, 1));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], vec3(0, 1, 0));
+				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], vec3(1, 0, 0));
 					//Right_foot_toes
 					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT], vec3(translatePart[RIGHT_FOOT_TOES][0], translatePart[RIGHT_FOOT_TOES][1], translatePart[RIGHT_FOOT_TOES][2]));
 					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT_TOES], vec3(initialOffset[RIGHT_FOOT_TOES][0], initialOffset[RIGHT_FOOT_TOES][1], initialOffset[RIGHT_FOOT_TOES][2]));
-					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
-					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
+					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
+					
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
 		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
@@ -1293,7 +1297,7 @@ float walk()
 	
 }
 
-void jumpingJack()
+void jumpingJack() // NAIK TURUN BELUM*****************************************
 {
 	if (!isOpen)
 	{
@@ -1303,58 +1307,84 @@ void jumpingJack()
 		}
 		pause = false;
 
-
+		
 		if (!squat1)
 		{
-			// rotatePart[LEFT_UPPER_ARM][2] += 5.0f;
-			cout << rotatePart[LEFT_UPPER_ARM][2] << endl;
+			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+			rotatePart[LEFT_LOWER_ARM][1] += 10.0f;
+
 			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
 			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
 			rotatePart[LEFT_FOOT][0] -= 3.0f;
 
-			if (rotatePart[LEFT_FOOT][0] <= -35.0f)
+			if (rotatePart[LEFT_LOWER_ARM][1] >= 80.0f)
 			{
-				rotatePart[LEFT_FOOT][0] = -35.0f;
+				rotatePart[LEFT_LOWER_ARM][1] = 80.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][0] <= -20.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = -20.0f;
 				
-				if (rotatePart[LEFT_UPPER_THIGH][0] <= -20.0f)
+				if (rotatePart[LEFT_LOWER_THIGH][0] >= 25.0f)
 				{
-					rotatePart[LEFT_UPPER_THIGH][0] = -20.0f;
-					if (rotatePart[LEFT_LOWER_THIGH][0] >= 60.0f)
+					rotatePart[LEFT_LOWER_THIGH][0] = 25.0f;
+					if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
 					{
-						rotatePart[LEFT_LOWER_THIGH][0] = 60.0f;
+						rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
 						squat1 = true;
 					}
 				}
 			}
 
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
 			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
 			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
 			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
 		}
 		else if (!squat2)
 		{
-			// rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
-			rotatePart[LEFT_UPPER_THIGH][0] += 3.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] -= 5.0f;
-			rotatePart[LEFT_FOOT][0] += 3.0f;
+			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+			rotatePart[LEFT_LOWER_ARM][0] -= 10.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+			rotatePart[LEFT_FOOT][0] += 10.0f;
 			rotatePart[LEFT_FOOT][2] -= 3.0f;
+			rotatePart[LEFT_FOOT_TOES][0] -= 5.f;
 
-			/*if (rotatePart[LEFT_UPPER_ARM][2] >= 100.0f)
+			if (rotatePart[LEFT_UPPER_ARM][2] >= 140.0f)
 			{
-				rotatePart[LEFT_UPPER_ARM][2] = 100.0f;
-			}*/
-
-			if (rotatePart[LEFT_FOOT][0] >= 0.0f)
-			{
-				rotatePart[LEFT_FOOT][0] = 0.0f;
+				rotatePart[LEFT_UPPER_ARM][2] = 140.0f;
 			}
 
-			if (rotatePart[LEFT_FOOT][2] <= -20.0f)
+			if (rotatePart[LEFT_LOWER_ARM][0] <= -80.0f)
 			{
-				rotatePart[LEFT_FOOT][2] = -20.0f;
+				rotatePart[LEFT_LOWER_ARM][0] = -80.0f;
 			}
 
-			rotatePart[LEFT_UPPER_THIGH][2] += 3.0f;
+			if (rotatePart[LEFT_FOOT][0] >= 50.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = 50.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT_TOES][0] <= -35.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = -35.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][2] <= -10.0f)
+			{
+				rotatePart[LEFT_FOOT][2] = -10.0f;
+			}
+
+			if (rotatePart[LEFT_UPPER_ARM][2] >= 120.0f)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] = 120.0f;
+			}
+
+			rotatePart[LEFT_UPPER_THIGH][2] += 1.0f;
 
 			if (rotatePart[LEFT_UPPER_THIGH][2] >= 10.0f)
 			{
@@ -1373,49 +1403,52 @@ void jumpingJack()
 				}
 			}
 
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
 			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
 			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
 			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
 			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
 			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
 		}
 	}
 	else
 	{
-		system("pause");
 		if (pause)
 		{
 			Sleep(300);
 		}
 		pause = false;
-
-		rotatePart[LEFT_UPPER_ARM][1] -= 2.0f;
-		if (rotatePart[LEFT_UPPER_ARM][1] <= -90.0f)
-		{
-			rotatePart[LEFT_UPPER_ARM][1] = -90.0f;
-		}
+		
 
 		if (!squat1)
 		{
+			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
+			rotatePart[LEFT_LOWER_ARM][1] -= 5.0f;
+			rotatePart[LEFT_LOWER_ARM][0] += 10.0f;
+
 			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
 			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
-			rotatePart[LEFT_FOOT][0] -= 3.0f;
 
-			if (rotatePart[LEFT_FOOT][0] <= -35.0f)
+			if (rotatePart[LEFT_LOWER_ARM][0] >= 0.0f)
 			{
-				rotatePart[LEFT_FOOT][0] = -35.0f;
+				rotatePart[LEFT_LOWER_ARM][0] = 0.0f;
+			}
 
-				if (rotatePart[LEFT_UPPER_THIGH][0] <= -20.0f)
+			if (rotatePart[LEFT_LOWER_THIGH][0] >= 15.0f)
+			{
+				rotatePart[LEFT_LOWER_THIGH][0] = 15.0f;
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
 				{
-					rotatePart[LEFT_UPPER_THIGH][0] = -20.0f;
-					if (rotatePart[LEFT_LOWER_THIGH][0] >= 60.0f)
-					{
-						rotatePart[LEFT_LOWER_THIGH][0] = 60.0f;
-						squat1 = true;
-					}
+					rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
+					squat1 = true;
 				}
 			}
 
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
 			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
 			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
 			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
@@ -1423,15 +1456,21 @@ void jumpingJack()
 		else if (!squat2)
 		{
 			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
-
-			rotatePart[LEFT_UPPER_THIGH][0] += 3.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] -= 5.0f;
-			rotatePart[LEFT_FOOT][0] += 3.0f;
+			rotatePart[LEFT_LOWER_ARM][1] -= 10.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+			rotatePart[LEFT_FOOT][0] += 10.0f;
 			rotatePart[LEFT_FOOT][2] += 3.0f;
+			rotatePart[LEFT_FOOT_TOES][0] += 5.0f;
 
-			if (rotatePart[LEFT_UPPER_ARM][2] == 0.0f)
+			if (rotatePart[LEFT_UPPER_ARM][2] <= 0.0f)
 			{
-				rotatePart[LEFT_UPPER_ARM][2];
+				rotatePart[LEFT_UPPER_ARM][2] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_LOWER_ARM][1] <= 0.0f)
+			{
+				rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
 			}
 
 			if (rotatePart[LEFT_FOOT][0] >= 0.0f)
@@ -1439,12 +1478,17 @@ void jumpingJack()
 				rotatePart[LEFT_FOOT][0] = 0.0f;
 			}
 
+			if (rotatePart[LEFT_FOOT_TOES][0] >= 0.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
+			}
+
 			if (rotatePart[LEFT_FOOT][2] >= 0.0f)
 			{
 				rotatePart[LEFT_FOOT][2] = 0.0f;
 			}
 
-			rotatePart[LEFT_UPPER_THIGH][2] -= 3.0f;
+			rotatePart[LEFT_UPPER_THIGH][2] -= 1.0f;
 
 			if (rotatePart[LEFT_UPPER_THIGH][2] <= 0.0f)
 			{
@@ -1463,10 +1507,13 @@ void jumpingJack()
 				}
 			}
 
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
 			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
 			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
 			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
 			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
 			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
 		}
 	}
