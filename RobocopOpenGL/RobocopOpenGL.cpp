@@ -56,7 +56,9 @@ int main(int argc, char** argv) {
 	//init glfw
 	ImFont* font1 = NULL;
 	GLFWwindow* window = initProgramGLFW(font1);
-
+  
+	double lasttime = glfwGetTime();
+	float returnDegree = 0;
 	while (!glfwWindowShouldClose(window)) {
 		//Keep running, put the code here
 		//correct eyeAngleY
@@ -76,17 +78,12 @@ int main(int argc, char** argv) {
 		//push font
 		ImGui::PushFont(font1);
 
-
 		if (show_demo_window)
 			ImGui::ShowDemoWindow(&show_demo_window);
 
 		{
 			ImGui::SetNextWindowSizeConstraints(ImVec2(400,1080), ImVec2(400,1080)); //width x height fixed
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
-			//another simple window
-			static float f = 0.0f;
-			static int counter = 0;
-
 			ImGui::Begin("Miscellaneous Toolbox");                          // Create a window called "Hello, world!" and append into it.
 
 			ImGui::Text("Press this button to enable or disable lighting");               // Display some text (you can use a format strings too)
@@ -196,6 +193,7 @@ int main(int argc, char** argv) {
 		displayGLFW(window);
 	}
 
+
 	//stop imgui
 	ImGui_ImplOpenGL3_Shutdown();
 	ImGui_ImplGlfw_Shutdown();
@@ -206,6 +204,7 @@ int main(int argc, char** argv) {
 	glfwTerminate();
 	return 0;
 }
+
 void resetModel() {
 	for (int i = 0; i < PARTSNUM; i++) {
 		translatePart[i][0] = 0.f;
@@ -225,14 +224,6 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	resetModel();
 	ModelBackground = mat4(1.0);
 	ModelBackground = translate(ModelBackground, vec3(0, backGroundShiftUp, 0));
-	for (int i = 0; i < PARTSNUM; i++) {
-		translatePart[i][0] = { 0 };
-		translatePart[i][1] = { 0 };
-		translatePart[i][2] = { 0 };
-		rotatePart[i][0] = { 0 };
-		rotatePart[i][1] = { 0 };
-		rotatePart[i][2] = { 0 };
-	}
 
 	//work backwards to correct the offset
 	initialOffset[LEFT_FOOT_TOES][0] -= initialOffset[LEFT_FOOT][0];
@@ -322,6 +313,13 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 		cout << "window creation failed\n";
 		exit(EXIT_FAILURE);
 	}
+	r_isUp = true; // upper leg
+	r_isUp2 = false; // lower leg
+
+	isOpen = false;
+	squat1 = false;
+	squat2 = false;
+}
 
 	glfwSetKeyCallback(window, KeyboardGLFW);
 	glfwMakeContextCurrent(window);
@@ -481,6 +479,7 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	printf("Version: %s\n", glGetString (GL_VERSION));
 	printf("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
 	*/
+	
 	return window;
 }
 
@@ -525,6 +524,7 @@ void displayGLFW(GLFWwindow* window) {
 	//	//displayLightSource(View, Projection);
 	//}
 
+
 	glBindVertexArray(VAO);
 	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
 	float eyey = DOR(eyeAngley);
@@ -536,6 +536,7 @@ void displayGLFW(GLFWwindow* window) {
 	Projection = perspective(FoV, (float)(1920 - widthStart) / (1080 - heightStart), nearClip, farClip);
 
 	myUpdateModel();
+
 	//update data to UBO for MVP
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
 	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &View);
@@ -721,6 +722,7 @@ void displayGLFW(GLFWwindow* window) {
 	}
 
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
 	glfwSwapBuffers(window);//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
 	glfwPollEvents();
 }
@@ -732,8 +734,10 @@ void Obj2Buffer() {
 	std::vector<std::string> Materials;//mtl-name
 	std::string texture;
 	for (int i = 0; i < PARTSNUM; i++) {
-		cout << partsList[i] << endl;
+		//for debug purposes
+
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
+
 	}
 	for (int i = 0; i < EXTRAPARTS; i++) {
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
@@ -742,14 +746,29 @@ void Obj2Buffer() {
 	if (useBackground) {
 		loadMTL("../Assets/Obj/Sci_Fi_Corridor.mtl", Kds, Kas, Kss, Materials, texture);
 	}
-
 	for (int i = 0; i < Materials.size(); i++) {
 		string mtlname = Materials[i];
 		//  name            vec3
 		KDs[mtlname] = Kds[i];
 	}
 
+
 	for (int i = 0; i < PARTSNUM; i++) {
+		if (!renderBodyTop && (i >= 0 && i <= 3 || i >= 13)) {
+			continue;
+		}
+
+		if (!renderHead && (i >= 0 && i <= 1)) {
+			continue;
+		}
+
+		if (!renderArm && (i >= 13)) {
+			continue;
+		}
+
+		if (!renderLeg && (i >= 5 && i <= 12)) {
+			continue;
+		}
 		load2Buffer("../Assets/Obj/"+partsList[i]+".obj", i);
 	}
 	for (int i = 0; i < EXTRAPARTS; i++) {
@@ -838,11 +857,12 @@ void Obj2Buffer() {
 	}
 
 	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
+	//cout << "s5\n";
 }
 
 
 void myUpdateModel() {
-	//reset state
+	//reset state, translate to initial place
 	for (int i = 0; i < PARTSNUM; i++) {
 		Models[i] = mat4(1.0f);
 	}
@@ -878,6 +898,7 @@ void myUpdateModel() {
 					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][2], vec3(0, 0, 1));
 					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][1], vec3(0, 1, 0));
 					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][0], vec3(1, 0, 0));
+
 				//Right_Upper_arm
 				Models[RIGHT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
 				Models[RIGHT_UPPER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(initialOffset[RIGHT_UPPER_ARM][0], initialOffset[RIGHT_UPPER_ARM][1], initialOffset[RIGHT_UPPER_ARM][2]));
@@ -963,6 +984,7 @@ void myUpdateModel() {
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
 					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
+
 	//placing to initial codes
 	for (int i = 0; i < PARTSNUM; i++) {
 		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
@@ -1005,24 +1027,6 @@ void load2Buffer(string obj, int i) {
 //Keyboard for GLFW
 void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	switch (key) {
-	case GLFW_KEY_Q: 
-		rotatePart[LEFT_UPPER_ARM][0] += 3;
-		break;
-	case GLFW_KEY_E:
-		rotatePart[LEFT_UPPER_ARM][0] -= 3;
-		break;
-	case GLFW_KEY_R:
-		rotatePart[LEFT_UPPER_ARM][2] += 3;
-		break;
-	case GLFW_KEY_T:
-		rotatePart[LEFT_UPPER_ARM][2] -= 3;
-		break;
-	case GLFW_KEY_Y:
-		rotatePart[LEFT_UPPER_ARM][1] += 3;
-		break;
-	case GLFW_KEY_U:
-		rotatePart[LEFT_UPPER_ARM][1] -= 3;
-		break;
 	case GLFW_KEY_W:
 
 		rotatePart[CROTCH][0] = 0;
@@ -1074,6 +1078,7 @@ void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mod
 	case GLFW_KEY_J:
 		rotatePart[LEFT_LOWER_ARM][0] += 4;
 		break;
+
 	case GLFW_KEY_K:
 		rotatePart[LEFT_LOWER_ARM][0] -= 4;
 		break;
@@ -1143,16 +1148,504 @@ float clampValMax(float x, float clampToMax)
 	}
 }
 
-float clampValMin(float x, float clampToMin)
+float sf = 1.0f;
+float walk()
 {
-	if (x <= clampToMin)
+	float currentTime = glfwGetTime();
+	cout << rotatePart[RIGHT_UPPER_ARM][0] << endl;
+
+	// RIGHTLEG
+	if (r_isUp)
 	{
-		return clampToMin;
+		// leg go up
+		if (rotatePart[RIGHT_UPPER_THIGH][0] > -30.0f)
+		{
+			rotatePart[RIGHT_UPPER_THIGH][0] -= 0.7f;
+		}
+
+		if (!r_isUp2 && !r_is_return)
+		{
+			rotatePart[RIGHT_LOWER_THIGH][0] += 1.6f;
+			if (rotatePart[RIGHT_LOWER_THIGH][0] >= 35.0f)
+			{
+				r_isUp2 = true;
+			}
+		}
+		else if (!r_isUp2 && r_is_return)
+		{
+			if (rotatePart[RIGHT_UPPER_THIGH][0] <= 999.0f)
+			{
+				rotatePart[RIGHT_LOWER_THIGH][0] += 1.0f;
+				if (rotatePart[RIGHT_LOWER_THIGH][0] >= 60.0f)
+				{
+					r_isUp2 = true;
+				}
+			}
+		}
+		else
+		{
+			rotatePart[RIGHT_LOWER_THIGH][0] -= 1.0f;
+			if (rotatePart[RIGHT_LOWER_THIGH][0] <= 0.0f)
+			{
+				rotatePart[RIGHT_LOWER_THIGH][0] = 0.0f;
+				// do nothing
+			}
+		}
+
+		if (!r_isUp4 && r_is_return)
+		{
+			rotatePart[RIGHT_FOOT_TOES][0] += 0.5f;
+			if (rotatePart[RIGHT_FOOT_TOES][0] >= 0.0f)
+			{
+				rotatePart[RIGHT_FOOT_TOES][0] = 0.0f;
+				r_isUp4 = false;
+			}
+		}
+
+
+		if (rotatePart[RIGHT_UPPER_THIGH][0] <= -30.0f && rotatePart[RIGHT_LOWER_THIGH][0] == 0.0f)
+		{
+			r_isUp = false;
+			r_isUp2 = false;
+			r_isUp3 = false;
+			r_isUp4 = true;
+			// system("pause");
+		}
 	}
 	else
 	{
-		return x;
+		// leg go down
+		rotatePart[RIGHT_UPPER_THIGH][0] += 0.7f;
+		if (!r_isUp2 && rotatePart[RIGHT_UPPER_THIGH][0] >= 0.0f)
+		{
+			rotatePart[RIGHT_LOWER_THIGH][0] += 0.6f;
+
+			if (rotatePart[RIGHT_LOWER_THIGH][0] >= 30.0f)
+			{
+				rotatePart[RIGHT_LOWER_THIGH][0] = 30.0f;
+				r_isUp2 = true;
+			}
+		}
+		else if (!r_isUp2 && rotatePart[RIGHT_UPPER_THIGH][0] >= -10.0f)
+		{
+			rotatePart[RIGHT_LOWER_THIGH][0] += 0.3f;
+			// cout << rotatePart[RIGHT_LOWER_THIGH][0] << endl;
+			// system("pause");
+		} 
+
+		if (!r_isUp3)
+		{
+			rotatePart[RIGHT_FOOT][0] += 0.8f;
+
+			if (rotatePart[RIGHT_FOOT][0] >= 10.0f)
+			{
+				rotatePart[RIGHT_FOOT][0] = 10.0f;
+				r_isUp3 = true;
+			}
+		}
+		else
+		{
+			rotatePart[RIGHT_FOOT][0] -= 0.8f;
+			if (rotatePart[RIGHT_FOOT][0] <= 0.0f)
+			{
+				rotatePart[RIGHT_FOOT][0] = 0.0f;
+				r_isUp3 = true;
+			}
+		}
+
+		if (r_isUp4 && rotatePart[RIGHT_FOOT][0] <= 0.0f)
+		{
+			rotatePart[RIGHT_FOOT_TOES][0] -= 0.5f;
+			if (rotatePart[RIGHT_FOOT_TOES][0] <= -20.0f)
+			{
+				rotatePart[RIGHT_FOOT_TOES][0] = -20.0f;
+				r_isUp4 = false;
+			}
+		}
+		
+
+
+		if (rotatePart[RIGHT_UPPER_THIGH][0] >= 30.0f)
+		{
+			// system("pause");
+			r_isUp = true;
+			r_isUp2 = false;
+			r_isUp3 = false;
+			r_isUp4 = false;
+			r_is_return = true;
+		}
 	}
+
+	// LEFT LEG
+	if (l_isUp)
+	{
+		// leg go up
+		if (rotatePart[LEFT_UPPER_THIGH][0] > -30.0f)
+		{
+			rotatePart[LEFT_UPPER_THIGH][0] -= 0.7f;
+		}
+
+		if (!l_isUp2 && !l_is_return)
+		{
+			rotatePart[LEFT_LOWER_THIGH][0] += 1.6f;
+			if (rotatePart[LEFT_LOWER_THIGH][0] >= 35.0f)
+			{
+				l_isUp2 = true;
+			}
+		}
+		else if (!l_isUp2 && l_is_return)
+		{
+			if (rotatePart[LEFT_UPPER_THIGH][0] <= 999.0f)
+			{
+				rotatePart[LEFT_LOWER_THIGH][0] += 1.0f;
+				if (rotatePart[LEFT_LOWER_THIGH][0] >= 60.0f)
+				{
+					l_isUp2 = true;
+				}
+			}
+		}
+		else
+		{
+			rotatePart[LEFT_LOWER_THIGH][0] -= 1.0f;
+			if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+			{
+				rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+				// do nothing
+			}
+		}
+
+		if (!l_isUp4 && l_is_return)
+		{
+			rotatePart[LEFT_FOOT_TOES][0] += 0.5f;
+			if (rotatePart[LEFT_FOOT_TOES][0] >= 0.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
+				l_isUp4 = false;
+			}
+		}
+
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= -30.0f && rotatePart[LEFT_LOWER_THIGH][0] == 0.0f)
+		{
+			l_isUp = false;
+			l_isUp2 = false;
+			l_isUp3 = false;
+			l_isUp4 = true;
+			// system("pause");
+		}
+	}
+	else
+	{
+		// leg go down
+		rotatePart[LEFT_UPPER_THIGH][0] = -rotatePart[RIGHT_UPPER_THIGH][0];
+		if (!l_isUp2 && rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
+		{
+			rotatePart[LEFT_LOWER_THIGH][0] += 0.6f;
+
+			if (rotatePart[LEFT_LOWER_THIGH][0] >= 30.0f)
+			{
+				rotatePart[LEFT_LOWER_THIGH][0] = 30.0f;
+				l_isUp2 = true;
+			}
+		}
+		else if (!l_isUp2 && rotatePart[LEFT_UPPER_THIGH][0] >= -10.0f)
+		{
+			rotatePart[LEFT_LOWER_THIGH][0] += 0.3f;
+			// cout << rotatePart[RIGHT_LOWER_THIGH][0] << endl;
+			// system("pause");
+		}
+
+		if (!l_isUp3)
+		{
+			rotatePart[LEFT_FOOT][0] += 0.8f;
+
+			if (rotatePart[LEFT_FOOT][0] >= 10.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = 10.0f;
+				l_isUp3 = true;
+			}
+		}
+		else
+		{
+			rotatePart[LEFT_FOOT][0] -= 0.8f;
+			if (rotatePart[LEFT_FOOT][0] <= 0.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = 0.0f;
+				l_isUp3 = true;
+			}
+		}
+
+		if (l_isUp4 && rotatePart[LEFT_FOOT][0] <= 0.0f)
+		{
+			rotatePart[LEFT_FOOT_TOES][0] -= 0.5f;
+			if (rotatePart[LEFT_FOOT_TOES][0] <= -20.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = -20.0f;
+				l_isUp4 = false;
+			}
+		}
+
+
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] >= 30.0f)
+		{
+			// system("pause");
+			l_isUp = true;
+			l_isUp2 = false;
+			l_isUp3 = false;
+			l_isUp4 = false;
+			l_is_return = true;
+		}
+	}
+
+	// RIGHT HAND
+	rotatePart[RIGHT_UPPER_ARM][0] = -rotatePart[RIGHT_UPPER_THIGH][0];
+	if (rotatePart[RIGHT_UPPER_ARM][0] > 0) // when move back
+	{
+		rotatePart[RIGHT_LOWER_ARM][0] = clampValMax(rotatePart[RIGHT_LOWER_ARM][0] + 0.8f, 0.0f);
+	}
+	else
+	{
+		rotatePart[RIGHT_LOWER_ARM][0] -= 0.5f;
+	}
+
+	rotatePart[LEFT_UPPER_ARM][0] = rotatePart[RIGHT_UPPER_THIGH][0];
+	if (rotatePart[LEFT_UPPER_ARM][0] > 0) // when move back
+	{
+		rotatePart[LEFT_LOWER_ARM][0] = clampValMax(rotatePart[LEFT_LOWER_ARM][0] + 0.8f, 0.0f);
+	}
+	else
+	{
+		rotatePart[LEFT_LOWER_ARM][0] -= 0.5f;
+	}
+
+	translatePart[CROTCH][1] = clampValMin(sin((currentTime - startTime)  * 2 * 3.14 / 1.5) * 0.1f, 0.0f);
+	rotatePart[ABS][1] = -sin((currentTime - startTime) * 2 * 3.14 / 3.0f) * 1.5f;
+
+
+	cout << "updated\n";
+	return rotatePart[RIGHT_UPPER_THIGH][0];
+	
 }
 
+void jumpingJack() // NAIK TURUN BELUM*****************************************
+{
+	if (!isOpen)
+	{
+		if (pause)
+		{
+			Sleep(400);
+		}
+		pause = false;
 
+		
+		if (!squat1)
+		{
+			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+			rotatePart[LEFT_LOWER_ARM][1] += 10.0f;
+
+			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
+			rotatePart[LEFT_FOOT][0] -= 3.0f;
+
+			if (rotatePart[LEFT_LOWER_ARM][1] >= 80.0f)
+			{
+				rotatePart[LEFT_LOWER_ARM][1] = 80.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][0] <= -20.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = -20.0f;
+				
+				if (rotatePart[LEFT_LOWER_THIGH][0] >= 25.0f)
+				{
+					rotatePart[LEFT_LOWER_THIGH][0] = 25.0f;
+					if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
+					{
+						rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
+						squat1 = true;
+					}
+				}
+			}
+
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+		}
+		else if (!squat2)
+		{
+			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+			rotatePart[LEFT_LOWER_ARM][0] -= 10.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+			rotatePart[LEFT_FOOT][0] += 10.0f;
+			rotatePart[LEFT_FOOT][2] -= 3.0f;
+			rotatePart[LEFT_FOOT_TOES][0] -= 5.f;
+
+			if (rotatePart[LEFT_UPPER_ARM][2] >= 140.0f)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] = 140.0f;
+			}
+
+			if (rotatePart[LEFT_LOWER_ARM][0] <= -80.0f)
+			{
+				rotatePart[LEFT_LOWER_ARM][0] = -80.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][0] >= 50.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = 50.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT_TOES][0] <= -35.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = -35.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][2] <= -10.0f)
+			{
+				rotatePart[LEFT_FOOT][2] = -10.0f;
+			}
+
+			if (rotatePart[LEFT_UPPER_ARM][2] >= 120.0f)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] = 120.0f;
+			}
+
+			rotatePart[LEFT_UPPER_THIGH][2] += 1.0f;
+
+			if (rotatePart[LEFT_UPPER_THIGH][2] >= 10.0f)
+			{
+				rotatePart[LEFT_UPPER_THIGH][2] = 10.0f;
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+					if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+					{
+						rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+						isOpen = true;
+						squat1 = false;
+						squat2 = false;
+						pause = true;
+					}
+				}
+			}
+
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+		}
+	}
+	else
+	{
+		if (pause)
+		{
+			Sleep(300);
+		}
+		pause = false;
+		
+
+		if (!squat1)
+		{
+			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
+			rotatePart[LEFT_LOWER_ARM][1] -= 5.0f;
+			rotatePart[LEFT_LOWER_ARM][0] += 10.0f;
+
+			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
+
+			if (rotatePart[LEFT_LOWER_ARM][0] >= 0.0f)
+			{
+				rotatePart[LEFT_LOWER_ARM][0] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_LOWER_THIGH][0] >= 15.0f)
+			{
+				rotatePart[LEFT_LOWER_THIGH][0] = 15.0f;
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
+					squat1 = true;
+				}
+			}
+
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+		}
+		else if (!squat2)
+		{
+			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
+			rotatePart[LEFT_LOWER_ARM][1] -= 10.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+			rotatePart[LEFT_FOOT][0] += 10.0f;
+			rotatePart[LEFT_FOOT][2] += 3.0f;
+			rotatePart[LEFT_FOOT_TOES][0] += 5.0f;
+
+			if (rotatePart[LEFT_UPPER_ARM][2] <= 0.0f)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_LOWER_ARM][1] <= 0.0f)
+			{
+				rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][0] >= 0.0f)
+			{
+				rotatePart[LEFT_FOOT][0] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT_TOES][0] >= 0.0f)
+			{
+				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
+			}
+
+			if (rotatePart[LEFT_FOOT][2] >= 0.0f)
+			{
+				rotatePart[LEFT_FOOT][2] = 0.0f;
+			}
+
+			rotatePart[LEFT_UPPER_THIGH][2] -= 1.0f;
+
+			if (rotatePart[LEFT_UPPER_THIGH][2] <= 0.0f)
+			{
+				rotatePart[LEFT_UPPER_THIGH][2] = 0.0f;
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+					if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+					{
+						rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+						isOpen = false;
+						squat1 = false;
+						squat2 = false;
+						pause = true;
+					}
+				}
+			}
+
+			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+		}
+	}
+}

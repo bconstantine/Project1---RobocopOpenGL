@@ -22,6 +22,10 @@ using namespace std;
 // Include GLM
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
+
+#include <chrono>
+#include <thread>
+
 using namespace glm;
 
 
@@ -54,6 +58,9 @@ using namespace glm;
 
 #define WALKSPEED 1;
 
+#define M_PI 3.14;
+
+#define TARGET_FPS 60;
 
 //for debugging
 bool renderBodyTop = true;
@@ -99,6 +106,10 @@ void myTimerFunc(int);
 
 //for using with GLFW
 GLFWwindow* initProgramGLFW(ImFont*);
+void resetModel();
+
+//for using with GLFW
+GLFWwindow* initProgramGLFW();
 void displayGLFW(GLFWwindow* window); //displayGLFW()
 void KeyboardGLFW(GLFWwindow*, int key, int scancode, int action, int mods);
 
@@ -112,12 +123,14 @@ void load2Buffer( string obj,int);
 
 //animation purposes
 void walk();
+float walk();
 void squat();
 void jumpingJack();
 void gangnamStyle();
 void moonWalk();
 void pushUp();
 void sitUp();
+float clip(float &var, float min, float max);
 
 bool isFrame;
 PALMMODE palmMode;
@@ -136,7 +149,7 @@ GLuint nVBOs[PARTSTOTAL+1];
 GLuint program;
 int pNo;
 
-float rotateCentral = 0.f;
+float rotateCentral = 180.f;
 
 
 //for viewing
@@ -215,3 +228,31 @@ int heightStart = 0;
 #define rightFoot 3
 int mode;
 int action;
+
+float clampValMin(float x, float clampToMin);
+float clampValMax(float x, float clampToMax);
+
+
+float startTime;
+///////////
+// For walk
+bool r_isFr = false;
+
+bool r_isUp			= true; // upper leg
+bool r_isUp2		= false; // lower leg
+bool r_isUp3		= false; // foot
+bool r_isUp4		= true; // foot toes
+bool r_is_return	= false;
+
+bool l_isUp = false; // upper leg
+bool l_isUp2 = false; // lower leg
+bool l_isUp3 = false; // foot
+bool l_isUp4 = true; // foot toes
+bool l_is_return = false;
+
+///////////
+// For Jumping Jack
+bool isOpen = false;
+bool squat1 = false;
+bool squat2 = false;
+bool pause	= true;

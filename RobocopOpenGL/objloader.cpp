@@ -50,7 +50,9 @@ bool loadOBJ(
 			break; // EOF = End Of File. Quit the loop.
 
 		// else : parse lineHeader
-	
+		/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+			printf("%s\n", lineHeader);
+		}*/
 		if ( strcmp( lineHeader, "v" ) == 0 ){//'v':�O�I
 			vec3 vertex;
 			fscanf(file, "%f %f %f\n", &vertex.x, &vertex.y, &vertex.z );
@@ -88,11 +90,29 @@ bool loadOBJ(
 			normalIndices.push_back(normalIndex[1]);
 			normalIndices.push_back(normalIndex[2]);
 		}else if(strcmp( lineHeader , "usemtl") == 0){
-			out_materialIndices.push_back(fcount);//last material used face counts	
-			char material[50];
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("1\n");
+			}*/
+			out_materialIndices.push_back(fcount);//last material used face counts
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("2\n");
+			}*/
+			char material[100];
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("3\n");
+			}*/
 			fscanf(file, "%s", material);
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("4 %s \n", material);
+			}*/
 			out_mtls.push_back(material);
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("5\n");
+			}*/
 			fcount = 0;//face count for next material
+			/*if (strcmp(path, "../Assets/Obj/Sci_Fi_Corridor.obj") == 0) {
+				printf("6\n");
+			}*/
 		}else{
 			// Probably a comment, eat up the rest of the line
 			char stupidBuffer[1000];
@@ -140,7 +160,6 @@ bool loadMTL(const char * path,
 				 int res = fscanf(file, "%s", lineHeader);
 				 if (res == EOF)
 					 break; // EOF = End Of File. Quit the loop.
-
 				 // else : parse lineHeader
 				 if(strcmp(lineHeader , "newmtl")==0){
 					 char material[50];
@@ -159,7 +178,7 @@ bool loadMTL(const char * path,
 					 fscanf(file, "%f %f %f\n",&specular.x,&specular.y,&specular.z);
 					 Ks.push_back(specular);
 				 }else if(strcmp(lineHeader ,"map_Kd")==0){
-					 fscanf(file, "%s\n",texture);
+					 //fscanf(file, "%s\n",texture);
 
 				 }else{
 					 // Probably a comment, eat up the rest of the line
