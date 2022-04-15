@@ -93,7 +93,7 @@
   <ItemGroup>
     <None Include="DSPhong_Material.fp" />
     <None Include="DSPhong_Material.vp" />
-    <None Include="light_box.vp" />
     <None Include="light_box.fp" />
+    <None Include="light_box.vp" />
   </ItemGroup>
 </Project>

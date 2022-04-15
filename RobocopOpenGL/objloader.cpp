@@ -186,7 +186,15 @@ bool loadMTL(const char * path,
 					 fgets(stupidBuffer, 1000, file);
 				 }
 			 }
-
+			 if (Ks.size() != Ka.size()) {
+				 printf("find as abnormality in: %s\n", path);
+			 }
+			 if (Ks.size() != Kd.size()) {
+				 printf("find ds abnormality in: %s\n", path);
+			 }
+			 if (Kd.size() != Ka.size()) {
+				 printf("find da abnormality in: %s\n", path);
+			 }
 			 return true;
 }
 

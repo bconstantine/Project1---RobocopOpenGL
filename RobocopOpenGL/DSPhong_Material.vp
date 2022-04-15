@@ -8,18 +8,21 @@ layout(location = 0) in vec3 vPosition;
 layout(location = 1) in vec2 vertexUV;
 layout(location = 2) in vec3 vertexNormal;
 
-vec3 vLightPosition = vec3(0,10,50);
 
 uniform MatVP{
 	mat4 View;
 	mat4 Projection;
 };
 uniform mat4 Model;
+uniform vec3 vLightPosition;
+uniform vec3 vViewPos;
 
 // Color to fragment program
 out vec3 vVaryingNormal;
 out vec3 vVaryingLightDir;
 out vec2 UV;
+out vec3 viewDir;
+out vec3 halfwayDir;
 
 void main(void) 
 { 
@@ -27,15 +30,23 @@ void main(void)
 	mat4 MV = View*Model;
 	
     // Get surface normal in eye coordinates
+    // just in case, normalize varyingNormal to be safe
 	mat3 normalMatrix = mat3(MV);//normal matrix is MV matrix's 3*3 excluding 'w' 
-    vVaryingNormal = normalMatrix * vertexNormal;
+    vVaryingNormal = normalize(normalMatrix * vertexNormal);
 
     // Get vertex position in eye coordinates
     vec4 vPosition4 = MV * vec4(vPosition,1);
     vec3 vPosition3 = vPosition4.xyz / vPosition4.w;
 
-    // Get vector to light source
+    // Get vector from light position to fragment position
+    //dont forget to normalize for future dot product
     vVaryingLightDir = normalize(vLightPosition - vPosition3);
+
+    //count viewDir, viewDirection compared to each vertices
+    viewDir = normalize(vViewPos - vPosition3);
+
+    //count halfwayDir, for Blinn-Phong
+    halfwayDir = normalize(vVaryingLightDir + viewDir);
 
 	UV = vertexUV;
     // Don't forget to transform the geometry!

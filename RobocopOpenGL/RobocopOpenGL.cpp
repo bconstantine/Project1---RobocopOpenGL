@@ -86,10 +86,59 @@ int main(int argc, char** argv) {
 			ImGui::SetNextWindowSizeConstraints(ImVec2(400,1080), ImVec2(400,1080)); //width x height fixed
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
 			ImGui::Begin("Miscellaneous Toolbox");                          // Create a window called "Hello, world!" and append into it.
-
-			ImGui::Text("Press this button to enable or disable lighting");               // Display some text (you can use a format strings too)
 			ImGui::Checkbox("Demo Window", &show_demo_window);
 			//ImGui::Checkbox("Show Light Box", &renderLightBox);
+			if (lightingFollowRobocop) {
+				lightPosition[0] = initialOffset[CROTCH][0];
+				lightPosition[1] = initialOffset[CROTCH][1] + robotShiftUp;
+				lightPosition[2] = initialOffset[CROTCH][2];
+				discoticLighting = false;
+			}
+			if (discoticLighting) {
+				lightingFollowRobocop = false;
+			}
+			if (ImGui::CollapsingHeader("Lighting related")) {
+				ImGui::Checkbox("Show Lighting box", &renderLightBox);
+				ImGui::SliderFloat3("Light position", lightPosition, -1000, 1000);
+				ImGui::Checkbox("Make Lighting follow Robocop", &lightingFollowRobocop);
+				ImGui::Checkbox("Discotic Lighting", &discoticLighting);
+				if (ImGui::Button("Reset Lighting")) {
+					lightingFollowRobocop = false;
+					discoticLighting = false;
+					lightPosition[0] = 0;
+					lightPosition[1] = 0;
+					lightPosition[2] = 0;
+					ambientColor[0] = 0.1;
+					ambientColor[1] = 0.1;
+					ambientColor[2] = 0.1;
+					diffuseColor[0] = 0.8;
+					diffuseColor[1] = 0.8;
+					diffuseColor[2] = 0.8;
+					specularColor[0] = 1;
+					specularColor[1] = 1;
+					specularColor[2] = 1;
+					Shininess = 32;
+				}
+				if (ImGui::TreeNode("Ambient Color")) {
+					ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
+					ImGui::ColorPicker4("", (float*)&ambientColor); // Edit 3 floats representing a color
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Diffuse Color")) {
+					ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
+					ImGui::ColorPicker4("", (float*)&diffuseColor); // Edit 3 floats representing a color
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Specular Color")) {
+					ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
+					ImGui::ColorPicker4("", (float*)&specularColor); // Edit 3 floats representing a color
+					ImGui::TreePop();
+				}
+				if (ImGui::TreeNode("Shininess")) {
+					ImGui::SliderFloat("Shininess", &Shininess, 2.0, 200);
+					ImGui::TreePop();
+				}
+			}
 			if (ImGui::CollapsingHeader("Projection Related")) {
 				ImGui::SliderFloat("Change FoV: ", &FoV, 30.0f, 90.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 				ImGui::SliderFloat("Change near clip: ", &nearClip, 0.1f, 10.f);
@@ -175,6 +224,10 @@ int main(int argc, char** argv) {
 				ImGui::Text("Current Mode = %s", animateInfo.c_str());
 			}
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+			ImGui::Text("Left upper thigh: %.3f\n",rotatePart[LEFT_UPPER_THIGH][0]);
+			ImGui::Text("Right upper thigh: %.3f\n", rotatePart[RIGHT_UPPER_THIGH][0]);
+			ImGui::Text("Left upper thigh: %.3f\n", rotatePart[LEFT_UPPER_ARM][0]);
+			ImGui::Text("Right upper thigh: %.3f\n", rotatePart[RIGHT_UPPER_ARM][0]);
 			ImGui::End();
 		}
 		//popping font
@@ -190,6 +243,16 @@ int main(int argc, char** argv) {
 		glfwGetFramebufferSize(window, &width, &height);
 		ratio = width / (float)height;
 		glViewport(0, 0, width, height);*/
+		
+		//check based on animation
+		if (animateMode == WALK) {
+			for (int i = 0; i < 3; i++) {
+				walk();
+			}
+		}
+		else if (animateMode == JUMPINGJACK) {
+			jumpingJack();
+		}
 
 		displayGLFW(window);
 	}
@@ -216,10 +279,6 @@ void resetModel() {
 		rotatePart[i][2] = 0.f;
 	}
 }
-
-GLuint M_KaID;
-GLuint M_KdID;
-GLuint M_KsID;
 
 GLFWwindow* initProgramGLFW(ImFont* font1) {
 	resetModel();
@@ -394,22 +453,17 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	glGenBuffers(1, &EBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
 
-	/*
 	//for lighting
 	glGenVertexArrays(1, &lightVAO);
 	glBindVertexArray(lightVAO);
 	glGenBuffers(1, &lightBoxBuffer);
 	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glBufferData(GL_ARRAY_BUFFER, sizeof(lightModel), lightModel, GL_STATIC_DRAW);
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), 0);
 	glGenBuffers(1, &lightBoxIndices);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recTriangleStripOrder), recTriangleStripOrder, GL_STATIC_DRAW);
-	ModelMatrixID = glGetUniformLocation(program, "ModelMatrix");
-	ViewMatrixID = glGetUniformLocation(program, "View");
-	ProjectionMatrixID = glGetUniformLocation(program, "Projection");
-	*/
 
-	/* 
 	//for shadow
 	glGenFramebuffers(1, &depthMapFBO);
 	glGenTextures(1, &depthMap);
@@ -429,7 +483,6 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); //unbind frame buffer
-	*/
 
 	ShaderInfo shaders[] = {
 		{ GL_VERTEX_SHADER, "DSPhong_Material.vp" },//vertex shader
@@ -437,30 +490,43 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 		{ GL_NONE, NULL } };
 	program = LoadShaders(shaders);//Ū��shader
 
-	//ShaderInfo lightshaders[] = {
-	//	{ GL_VERTEX_SHADER, "light_box.vp" },//vertex shader
-	//	{ GL_FRAGMENT_SHADER, "light_box.fp" },//fragment shader
-	//	{ GL_NONE, NULL }
-	//};
-	//renderLightProgram = LoadShaders(lightshaders);
+	ShaderInfo lightshaders[] = {
+		{ GL_VERTEX_SHADER, "light_box.vp" },//vertex shader
+		{ GL_FRAGMENT_SHADER, "light_box.fp" },//fragment shader
+		{ GL_NONE, NULL }
+	};
+	renderLightProgram = LoadShaders(lightshaders);
 
-	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
+	glUseProgram(renderLightProgram);
+
+	ProjectionMatrixID = glGetUniformLocation(renderLightProgram, "Projection");
+	ViewMatrixID = glGetUniformLocation(renderLightProgram, "View");
+	ModelMatrixID = glGetUniformLocation(renderLightProgram, "ModelMatrix");
+
+	glUseProgram(program);
 
 	MatricesIdx = glGetUniformBlockIndex(program, "MatVP");
 	ModelID = glGetUniformLocation(program, "Model");
+	lightPosID = glGetUniformLocation(program, "vLightPosition");
 	M_KaID = glGetUniformLocation(program, "Material.Ka");
 	M_KdID = glGetUniformLocation(program, "Material.Kd");
 	M_KsID = glGetUniformLocation(program, "Material.Ks");
-	//or
-	M_KdID = M_KaID + 1;
-	M_KsID = M_KaID + 2;
+	ambientID = glGetUniformLocation(program, "ambientColor");
+	diffuseID = glGetUniformLocation(program, "diffuseColor");
+	specularID = glGetUniformLocation(program, "specularColor");
+	ShininessID = glGetUniformLocation(program, "Shininess");
+	viewPosID = glGetUniformLocation(program, "vViewPos");
+	
 
 	Projection = glm::perspective(80.0f, (float)(1920) / (1080), 0.1f, 100.f);
 	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
 
 	// Camera matrix
+	viewPos[0] = translatePart[CROTCH][0];
+	viewPos[1] = translatePart[CROTCH][1]+robotShiftUp+2;
+	viewPos[2] = translatePart[CROTCH][2]+eyedistance;
 	View = glm::lookAt(
-		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp + 2, translatePart[CROTCH][2] + eyedistance), // Camera is at (0,0,20), in World Space), // Camera is at (0,10,25), in World Space
+		glm::vec3(viewPos[0],viewPos[1], viewPos[2]), // Camera is at (0,0,20), in World Space), // Camera is at (0,10,25), in World Space
 		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
 	);
@@ -490,21 +556,26 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 
 #define DOR(angle) (angle*3.1415/180);
 
-//void displayLightSource(mat4 view, mat4 proj) {
-//	cout << "Entering\n";
-//	glBindVertexArray(lightVAO);
-//	glUseProgram(renderLightProgram);
-//	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
-//	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
-//	glEnableVertexAttribArray(0);
-//	mat4 model = mat4(1.0);
-//	model = translate(model, vec3(lightPosition[0], lightPosition[1], lightPosition[2]));
-//	model = scale(model, vec3(lightScale, lightScale, lightScale));
-//	glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
-//	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &view[0][0]);
-//	glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &proj[0][0]);
-//	glDrawElements(GL_TRIANGLE_STRIP, sizeof(recTriangleStripOrder) / sizeof(int), GL_UNSIGNED_INT, 0);
-//}
+void displayLightSource(mat4 view, mat4 proj) {
+	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
+	glEnableVertexAttribArray(0);
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	mat4 model = mat4(1.0);
+	model = translate(model, vec3(lightPosition[0], lightPosition[1], lightPosition[2]));
+	model = scale(model, vec3(lightScale, lightScale, lightScale));
+	glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
+	mat4 viewMatrix = view;
+	mat4 projMatrix = proj;
+	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
+	glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &projMatrix[0][0]);
+	glDrawElementsBaseVertex(GL_TRIANGLE_STRIP, sizeof(recTriangleStripOrder) / sizeof(int), GL_UNSIGNED_INT, NULL,0);
+}
+
+void displayOnly(GLFWwindow* window) {
+	
+}
 
 void displayGLFW(GLFWwindow* window) {
 	//glClearColor(0.7, 0.7, 0.7, 1);
@@ -516,30 +587,46 @@ void displayGLFW(GLFWwindow* window) {
 	glViewport(0, 0, display_w, display_h);
 	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
 	//glClear(GL_COLOR_BUFFER_BIT);
-
-	//rendering shadow first
-	//render to depth map
-	//glViewport(widthStart, heightStart, SHADOW_WIDTH, SHADOW_HEIGHT);
-	//glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
-		//glClear(GL_DEPTH_BUFFER_BIT); //make sure that the depth buffer is empty, for light perspective depth
 	
 	//usual rendering
 	glViewport(widthStart, heightStart, 1920, 1080);
-	//if (renderLightBox) {
-	//	//displayLightSource(View, Projection);
-	//}
 
+	//only update View when angle change, to save computation
+	if (viewChange) {
+		float eyeAngleRad = DOR(eyeAngley);
+		viewPos[0] = translatePart[CROTCH][0] + eyedistance * sin(eyeAngleRad);
+		viewPos[1] = translatePart[CROTCH][1] + robotShiftUp + 2;
+		viewPos[2] = translatePart[CROTCH][2] + eyedistance * cos(eyeAngleRad);
+		View = lookAt(
+			vec3(viewPos[0],viewPos[1],viewPos[2] ), // Camera is at (0,0,20), in World Space
+			vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
+			vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+		);
+		viewChange = false;
+	}
+
+	Projection = perspective(FoV, (float)(1920 - widthStart) / (1080 - heightStart), nearClip, farClip);
+
+	glBindVertexArray(lightVAO);
+	glUseProgram(renderLightProgram);
+	if (discoticLighting) {
+		mat4 lightPosMV(1.0);
+		float currentTime = getTime();
+		lightPosMV = translate(lightPosMV, vec3(sinf(5.1f * currentTime) * 2.5f, cosf(5.7f * currentTime) * 2.5f, sinf(5.3f * currentTime) * cosf(5.5f * currentTime) * 2.5f));
+		lightPosMV = rotate(lightPosMV, currentTime * 45.0f, vec3(0.0f, 1.0f, 0.0f));
+		lightPosMV = rotate(lightPosMV, currentTime * 81.0f, vec3(1.0f, 0.0f, 0.0f));
+		vec4 robocopPos(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2], 1.0f);
+		robocopPos = lightPosMV * robocopPos;
+		lightPosition[0] = robocopPos[0];
+		lightPosition[1] = robocopPos[1];
+		lightPosition[2] = robocopPos[2];
+	}
+	if (renderLightBox) {
+		displayLightSource(View, Projection);
+	}
 
 	glBindVertexArray(VAO);
 	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
-	float eyey = DOR(eyeAngley);
-	View = lookAt(
-		vec3(translatePart[CROTCH][0] + eyedistance * sin(eyey), translatePart[CROTCH][1] +robotShiftUp + 2, translatePart[CROTCH][2] + eyedistance * cos(eyey)), // Camera is at (0,0,20), in World Space
-		vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
-		vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-	);
-	Projection = perspective(FoV, (float)(1920 - widthStart) / (1080 - heightStart), nearClip, farClip);
-
 	myUpdateModel();
 
 	//update data to UBO for MVP
@@ -549,8 +636,14 @@ void displayGLFW(GLFWwindow* window) {
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	GLuint offset[3] = { 0,0,0 };//offset for vertices , uvs , normals
+	glUniform4fv(ambientID, 1, &ambientColor[0]);
+	glUniform4fv(diffuseID, 1, &diffuseColor[0]);
+	glUniform4fv(specularID, 1, &specularColor[0]);
+	glUniform1fv(ShininessID, 1, &Shininess);
+	glUniform3fv(viewPosID, 1, &viewPos[0]);
 	for (int i = 0; i < PARTSNUM; i++) {
 		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Models[i][0][0]);
+		glUniform3fv(lightPosID, 1, &lightPosition[0]);
 		glBindBuffer(GL_ARRAY_BUFFER, VBO);
 		// 1rst attribute buffer : vertices
 		glEnableVertexAttribArray(0);
@@ -655,8 +748,9 @@ void displayGLFW(GLFWwindow* window) {
 		for (int j = 0; j < mtls[currentIndex].size(); j++) {//
 			mtlname = mtls[currentIndex][j];
 			//find the material diffuse color in map:KDs by material name.
+			glUniform3fv(M_KaID, 1, &KAs[mtlname][0]);
 			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
-			glUniform3fv(M_KsID, 1, &Ks[0]);
+			glUniform3fv(M_KsID, 1, &KSs[mtlname][0]);
 			//          (primitive   , glVertexID base , vertex count    )
 			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[currentIndex][j + 1] * 3);
 			//we draw triangles by giving the glVertexID base and vertex count is face count*3
@@ -750,11 +844,16 @@ void Obj2Buffer() {
 	//printf("%d\n",texture);
 	if (useBackground) {
 		loadMTL("../Assets/Obj/Sci_Fi_Corridor.mtl", Kds, Kas, Kss, Materials, texture);
-	}
+	}/*
+	cout << "Kds size: " << Kds.size() << endl;
+	cout << "Kas size: " << Kas.size() << endl;
+	cout << "Kss size: " << Kss.size() << endl;*/
 	for (int i = 0; i < Materials.size(); i++) {
 		string mtlname = Materials[i];
 		//  name            vec3
 		KDs[mtlname] = Kds[i];
+		KAs[mtlname] = Kas[i];
+		KSs[mtlname] = Kss[i];
 	}
 
 
@@ -1031,9 +1130,14 @@ void load2Buffer(string obj, int i) {
 }
 //Keyboard for GLFW
 void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mods) {
-	switch (key) {
-	case GLFW_KEY_W:
-
+	//related to animation
+	bool notAnimationKey = (key != GLFW_KEY_W) && (key != GLFW_KEY_A) && (key != GLFW_KEY_S) && (key != GLFW_KEY_D) && (key != GLFW_KEY_SPACE);
+	if (notAnimationKey) {
+		animateMode = IDLE;
+	}
+	else if (key == GLFW_KEY_W) {
+		animateMode = WALK;
+		viewChange = true;
 		rotatePart[CROTCH][0] = 0;
 		rotatePart[CROTCH][1] = 180;
 		rotatePart[CROTCH][2] = 0;
@@ -1041,9 +1145,10 @@ void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mod
 		//translatePart[CROTCH][0] += 0;
 		//translatePart[CROTCH][1] += 0;
 		translatePart[CROTCH][2] -= WALKSPEED;
-
-		break;
-	case GLFW_KEY_A:
+	}
+	else if (key == GLFW_KEY_A) {
+		animateMode = WALK;
+		viewChange = true;
 		rotatePart[CROTCH][0] = 0;
 		rotatePart[CROTCH][1] = -90;
 		rotatePart[CROTCH][2] = 0;
@@ -1051,18 +1156,10 @@ void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mod
 		translatePart[CROTCH][0] -= WALKSPEED;
 		//translatePart[CROTCH][1] += 0;
 		//translatePart[CROTCH][2] += 0;
-		break;
-	case GLFW_KEY_D:
-		rotatePart[CROTCH][0] = 0;
-		rotatePart[CROTCH][1] = 90;
-		rotatePart[CROTCH][2] = 0;
-
-		translatePart[CROTCH][0] += WALKSPEED;
-		//translatePart[CROTCH][1] += 0;
-		//translatePart[CROTCH][2] += 0;
-		break;
-	case GLFW_KEY_S:
-
+	}
+	else if (key == GLFW_KEY_S) {
+		animateMode = WALK;
+		viewChange = true;
 		rotatePart[CROTCH][0] = 0;
 		rotatePart[CROTCH][1] = 0;
 		rotatePart[CROTCH][2] = 0;
@@ -1070,36 +1167,65 @@ void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mod
 		//translatePart[CROTCH][0] += 0;
 		//translatePart[CROTCH][1] += 0;
 		translatePart[CROTCH][2] += WALKSPEED;
-		break;
+	}
+	else if (key == GLFW_KEY_D) {
+		animateMode = WALK;
+		viewChange = true;
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 90;
+		rotatePart[CROTCH][2] = 0;
+
+		translatePart[CROTCH][0] += WALKSPEED;
+		//translatePart[CROTCH][1] += 0;
+		//translatePart[CROTCH][2] += 0;
+	}
+	else if (key == GLFW_KEY_SPACE) {
+		if (animateMode == JUMPINGJACK) {
+			animateMode = IDLE;
+			resetModel();
+		}
+		else {
+			animateMode = JUMPINGJACK;
+		}
+	}
+	//related to viewing
+	switch (key) {
 	case GLFW_KEY_ESCAPE:
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 		break;
 	case GLFW_KEY_G:
+		animateMode = IDLE;
 		rotatePart[LEFT_UPPER_ARM][0] += 4;
 		break;
 	case GLFW_KEY_H:
+		animateMode = IDLE;
 		rotatePart[LEFT_UPPER_ARM][0] -= 4;
 		break;
 	case GLFW_KEY_J:
+		animateMode = IDLE;
 		rotatePart[LEFT_LOWER_ARM][0] += 4;
 		break;
-
 	case GLFW_KEY_K:
+		animateMode = IDLE;
 		rotatePart[LEFT_LOWER_ARM][0] -= 4;
 		break;
 	case GLFW_KEY_UP:
+		viewChange = true;
 		eyedistance -= 0.2;
 		clip(eyedistance, 5, 40);
 		break;
 	case GLFW_KEY_DOWN:
+		viewChange = true;
 		eyedistance += 0.2;
 		clip(eyedistance, 5, 40);
 		break;
 	case GLFW_KEY_LEFT:
+		viewChange = true;
 		eyeAngley -= 10;
 		break;
 	case GLFW_KEY_RIGHT:
 		eyeAngley += 10;
+		viewChange = true;
 		break;
 	case GLFW_KEY_0:
 		palmMode = CLENCH;
@@ -1107,6 +1233,8 @@ void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mod
 	case GLFW_KEY_1:
 		palmMode = OPEN;
 		break;
+	default:
+		animateMode = IDLE;
 	}
 }
 
