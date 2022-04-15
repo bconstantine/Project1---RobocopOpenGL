@@ -95,7 +95,8 @@ enum ANIMATEMODE {
 	GANGNAMSTYLE,
 	MOONWALK,
 	PUSHUP,
-	SITUP
+	SITUP,
+	TESMODE
 };
 
 
@@ -250,16 +251,13 @@ float clampValMax(float x, float clampToMax);
 float startTime;
 ///////////
 // For walk
-float getTime(); 
-bool walkCanDeactivate = true; 
-bool previouslyWalk = false;
 bool r_isFr = false;
 
-bool r_isUp			= true; // upper leg
-bool r_isUp2		= false; // lower leg
-bool r_isUp3		= false; // foot
-bool r_isUp4		= true; // foot toes
-bool r_is_return	= false;
+bool r_isUp = true; // upper leg
+bool r_isUp2 = false; // lower leg
+bool r_isUp3 = false; // foot
+bool r_isUp4 = true; // foot toes
+bool r_is_return = false;
 
 bool l_isUp = false; // upper leg
 bool l_isUp2 = false; // lower leg
@@ -272,4 +270,21 @@ bool l_is_return = false;
 bool isOpen = false;
 bool squat1 = false;
 bool squat2 = false;
-bool pause	= true;
+bool pause = true;
+
+///////////
+// For Gangnam Style
+float dGangnamFunction(float followSpeed, float followTarget, float imiTarget);
+bool setReadyGS = false;
+bool jumpLeft = true;
+bool isJump = true;
+int counter = 2;
+
+///////////
+// For Moon Walk
+bool setReady = false;
+bool l_slide = false;
+
+
+float getTime();
+void tesMode();

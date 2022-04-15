@@ -245,13 +245,64 @@ int main(int argc, char** argv) {
 		glViewport(0, 0, width, height);*/
 		
 		//check based on animation
-		if (animateMode == WALK) {
+		if (animateMode == IDLE)
+		{
+			resetModel();
+			///////////
+// For walk
+			r_isFr = false;
+
+			r_isUp = true; // upper leg
+			r_isUp2 = false; // lower leg
+			r_isUp3 = false; // foot
+			r_isUp4 = true; // foot toes
+			r_is_return = false;
+
+			l_isUp = false; // upper leg
+			l_isUp2 = false; // lower leg
+			l_isUp3 = false; // foot
+			l_isUp4 = true; // foot toes
+			l_is_return = false;
+
+			///////////
+			// For Jumping Jack
+			isOpen = false;
+			squat1 = false;
+			squat2 = false;
+			pause = true;
+
+			///////////
+			// For Gangnam Style
+			setReadyGS = false;
+			jumpLeft = true;
+			isJump = true;
+			counter = 2;
+
+			///////////
+			// For Moon Walk
+			setReady = false;
+			l_slide = false;
+		}
+		else  if (animateMode == WALK) {
 			for (int i = 0; i < 3; i++) {
 				walk();
 			}
 		}
 		else if (animateMode == JUMPINGJACK) {
 			jumpingJack();
+		}
+		else if (animateMode == MOONWALK)
+		{
+			moonWalk();
+		}
+		else if (animateMode == GANGNAMSTYLE)
+		{
+			palmMode = CLENCH;
+			gangnamStyle();
+		}
+		else if (animateMode == TESMODE)
+		{
+			tesMode();
 		}
 
 		displayGLFW(window);
@@ -1794,3 +1845,332 @@ void jumpingJack() // NAIK TURUN BELUM*****************************************
 		}
 	}
 }
+
+float dGangnamFunction(float followSpeed, float followTarget, float imiDist)
+{
+	return followSpeed * imiDist / abs(followTarget);
+}
+
+void gangnamStyle()
+{
+	float speed1 = 2.0f;
+	float speed2 = 2.2f;
+	if (!setReadyGS)
+	{
+		// add translate part here
+
+		rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+		rotatePart[LEFT_UPPER_THIGH][1] += 1.3f;
+		rotatePart[LEFT_LOWER_THIGH][0] += 1.3f;
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= -15.0f)
+		{
+			rotatePart[LEFT_UPPER_THIGH][0] = -15.0f;
+			rotatePart[LEFT_UPPER_THIGH][1] = 20.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] = 20.0f;
+		}
+
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_UPPER_THIGH][1] = -rotatePart[LEFT_UPPER_THIGH][1];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+
+		rotatePart[LEFT_UPPER_ARM][0] -= 0.8f;
+		if (rotatePart[LEFT_UPPER_ARM][0] <= -10.0f)
+		{
+			rotatePart[LEFT_UPPER_ARM][2] = clampValMin(rotatePart[LEFT_UPPER_ARM][2] - 1.5f, -20.0f);
+			rotatePart[LEFT_LOWER_ARM][0] = clampValMin(rotatePart[LEFT_LOWER_ARM][0] - 4.0f, -40.0f);
+			rotatePart[LEFT_LOWER_ARM][1] = clampValMin(rotatePart[LEFT_LOWER_ARM][1] - 2.5f, -90.0f);
+			// rotatePart[LEFT_LOWER_ARM][2] = clampValMin(rotatePart[LEFT_LOWER_ARM][2] - 2.5f, -30.0f);
+		}
+
+		if (rotatePart[LEFT_UPPER_ARM][0] <= -40.0f)
+		{
+			rotatePart[LEFT_UPPER_ARM][0] = -40.0f;
+			rotatePart[LEFT_UPPER_ARM][2] = -20.0f;
+
+			rotatePart[LEFT_LOWER_ARM][0] = -40.0f;
+			rotatePart[LEFT_LOWER_ARM][1] = -90.0f;
+			// rotatePart[LEFT_LOWER_ARM][2] = -30.0f;
+			setReadyGS = true;
+			Sleep(300);
+		}
+
+		rotatePart[RIGHT_UPPER_ARM][0] = 0.7 * rotatePart[LEFT_UPPER_ARM][0];
+		rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+		rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+		rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+		rotatePart[RIGHT_LOWER_ARM][2] = rotatePart[LEFT_LOWER_ARM][2];
+
+	}
+	else
+	{
+		float currentTime = getTime();
+		rotatePart[LEFT_PALM][2] = sin((currentTime - startTime) * 2 * 3.14 / 0.6) * 30.0f;
+		rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
+
+		float absSpeed = 2.0f;
+		float absMaxRot = 5.0f;
+
+		if (jumpLeft)
+		{
+			// jump left
+			/*rotatePart[LEFT_UPPER_THIGH][0] = -40.0f;
+			rotatePart[LEFT_UPPER_THIGH][1] = 50.0f;
+			rotatePart[LEFT_UPPER_THIGH][2] = 20.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] = 70.0f;
+
+			rotatePart[RIGHT_UPPER_THIGH][0] = 10.0f;
+			rotatePart[RIGHT_UPPER_THIGH][1] = 30.0f;
+			rotatePart[RIGHT_UPPER_THIGH][2] = -30.0f;
+			rotatePart[RIGHT_LOWER_THIGH][0] = 0.0f;*/
+			rotatePart[ABS][1] = clampValMax(rotatePart[ABS][1] + absSpeed, absMaxRot);
+
+			if (isJump)
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				cout << "isjump" << endl;
+				float pivotSpeed = speed1;
+				float pivotTarget = -40.0f;
+				float pivotSpeed2 = speed2;
+				float pivotTarget2 = 10.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
+				rotatePart[LEFT_UPPER_THIGH][1] += dGangnamFunction(pivotSpeed, pivotTarget, 50.0f);
+				rotatePart[LEFT_UPPER_THIGH][2] += dGangnamFunction(pivotSpeed, pivotTarget, 20.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] += dGangnamFunction(pivotSpeed, pivotTarget, 70.0f);
+
+				rotatePart[RIGHT_UPPER_THIGH][0] += pivotSpeed2;
+				rotatePart[RIGHT_UPPER_THIGH][1] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][1] + dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), 30.0f);
+				rotatePart[RIGHT_UPPER_THIGH][2] = clampValMin(rotatePart[RIGHT_UPPER_THIGH][2] - dGangnamFunction(pivotSpeed2, pivotTarget2, 10.0f), -10.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][1] = 50.0f;
+					rotatePart[LEFT_UPPER_THIGH][2] = 15.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 65.0f;
+					leftReady = true;
+				}
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] >= pivotTarget2)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[RIGHT_UPPER_THIGH][1] = 30.0f;
+					rotatePart[RIGHT_UPPER_THIGH][2] = -10.0f;
+					rightReady = true;
+				}
+
+				if (leftReady && rightReady)
+				{
+					isJump = false;
+				}
+			}
+			else
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				// return to ori pos
+				float pivotSpeed = speed1;
+				float pivotTarget = -15.0f;
+				float pivotSpeed2 = speed2;
+				float pivotTarget2 = -15.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[LEFT_UPPER_THIGH][1] = clampValMin(rotatePart[LEFT_UPPER_THIGH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), 20.0f);
+				rotatePart[LEFT_UPPER_THIGH][2] = clampValMin(rotatePart[LEFT_UPPER_THIGH][2] - dGangnamFunction(pivotSpeed, pivotTarget, 15.0f), 0.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), 20.0f);
+
+				rotatePart[RIGHT_UPPER_THIGH][0] -= pivotSpeed2;
+				rotatePart[RIGHT_UPPER_THIGH][1] = clampValMin(rotatePart[RIGHT_UPPER_THIGH][1] -= dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), -20.0f);
+				rotatePart[RIGHT_UPPER_THIGH][2] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][2] += dGangnamFunction(pivotSpeed2, pivotTarget2, 5.0f), 0.0f);
+				rotatePart[RIGHT_LOWER_THIGH][0] = clampValMax(rotatePart[RIGHT_LOWER_THIGH][0] += dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), 20.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][1] = 20.0f;
+					rotatePart[LEFT_UPPER_THIGH][2] = 0.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 20.0f;
+					leftReady = true;
+				}
+
+				// cout << "-----> " << rotatePart[RIGHT_UPPER_THIGH][0] << endl;
+				if (rotatePart[RIGHT_UPPER_THIGH][0] <= pivotTarget2)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[RIGHT_UPPER_THIGH][1] = -20.0f;
+					rotatePart[RIGHT_UPPER_THIGH][2] = 0.0f;
+					rotatePart[RIGHT_LOWER_THIGH][0] = 20.0f;
+					rightReady = true;
+				}
+
+				if (leftReady && rightReady)
+				{
+					if (counter % 4 != 0) jumpLeft = !jumpLeft;
+					counter++;
+					isJump = true; // true
+				}
+			}
+		}
+		else
+		{
+			rotatePart[ABS][1] = clampValMin(rotatePart[ABS][1] - absSpeed, -absMaxRot);
+			//cout << rotatePart[LEFT_UPPER_THIGH][0] << " " << rotatePart[LEFT_UPPER_THIGH][1] << " " << rotatePart[LEFT_LOWER_THIGH][0]<< endl;
+			// jump right
+			/*rotatePart[RIGHT_UPPER_THIGH][0] = -40.0f;
+			rotatePart[RIGHT_UPPER_THIGH][1] = -50.0f;
+			rotatePart[RIGHT_UPPER_THIGH][2] = -20.0f;
+			rotatePart[RIGHT_LOWER_THIGH][0] = 70.0f;
+
+			rotatePart[LEFT_UPPER_THIGH][0] = 10.0f;
+			rotatePart[LEFT_UPPER_THIGH][1] = -30.0f;
+			rotatePart[LEFT_UPPER_THIGH][2] = 30.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;*/
+
+			if (isJump)
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				cout << "isjump" << endl;
+				float pivotSpeed = speed1;
+				float pivotTarget = -40.0f;
+				float pivotSpeed2 = speed2;
+				float pivotTarget2 = 10.0f;
+				rotatePart[RIGHT_UPPER_THIGH][0] -= pivotSpeed;
+				rotatePart[RIGHT_UPPER_THIGH][1] -= dGangnamFunction(pivotSpeed, pivotTarget, 50.0f);
+				rotatePart[RIGHT_UPPER_THIGH][2] -= dGangnamFunction(pivotSpeed, pivotTarget, 20.0f);
+				rotatePart[RIGHT_LOWER_THIGH][0] += dGangnamFunction(pivotSpeed, pivotTarget, 70.0f);
+
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed2;
+				rotatePart[LEFT_UPPER_THIGH][1] = clampValMin(rotatePart[LEFT_UPPER_THIGH][1] - dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), -30.0f);
+				rotatePart[LEFT_UPPER_THIGH][2] = clampValMax(rotatePart[LEFT_UPPER_THIGH][2] + dGangnamFunction(pivotSpeed2, pivotTarget2, 10.0f), 10.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[RIGHT_UPPER_THIGH][1] = -50.0f;
+					rotatePart[RIGHT_UPPER_THIGH][2] = -15.0f;
+					rotatePart[RIGHT_LOWER_THIGH][0] = 65.0f;
+					leftReady = true;
+				}
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget2)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[LEFT_UPPER_THIGH][1] = -30.0f;
+					rotatePart[LEFT_UPPER_THIGH][2] = 10.0f;
+					rightReady = true;
+				}
+
+				if (leftReady && rightReady)
+				{
+					isJump = false; // false
+				}
+			}
+			else
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				// return to ori pos
+				float pivotSpeed = speed1;
+				float pivotTarget = -15.0f;
+				float pivotSpeed2 = speed2;
+				float pivotTarget2 = -15.0f;
+				rotatePart[RIGHT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[RIGHT_UPPER_THIGH][1] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), -20.0f);
+				rotatePart[RIGHT_UPPER_THIGH][2] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][2] + dGangnamFunction(pivotSpeed, pivotTarget, 15.0f), 0.0f);
+				rotatePart[RIGHT_LOWER_THIGH][0] = clampValMin(rotatePart[RIGHT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), 20.0f);
+
+				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed2;
+				rotatePart[LEFT_UPPER_THIGH][1] = clampValMax(rotatePart[LEFT_UPPER_THIGH][1] + dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), 20.0f);
+				rotatePart[LEFT_UPPER_THIGH][2] = clampValMin(rotatePart[LEFT_UPPER_THIGH][2] - dGangnamFunction(pivotSpeed2, pivotTarget2, 5.0f), 0.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] += dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), 20.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[RIGHT_UPPER_THIGH][1] = -20.0f;
+					rotatePart[RIGHT_UPPER_THIGH][2] = 0.0f;
+					rotatePart[RIGHT_LOWER_THIGH][0] = 20.0f;
+					leftReady = true;
+				}
+
+				// cout << "-----> " << rotatePart[RIGHT_UPPER_THIGH][0] << endl;
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget2)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[LEFT_UPPER_THIGH][1] = 20.0f;
+					rotatePart[LEFT_UPPER_THIGH][2] = 0.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 20.0f;
+					rightReady = true;
+				}
+
+				if (leftReady && rightReady)
+				{
+					if (counter % 4 != 0) jumpLeft = !jumpLeft;
+					counter++;
+					isJump = true; // true
+				}
+			}
+
+		}
+	}
+}
+
+void moonWalk()
+{
+	if (!setReady)
+	{
+		// set to start position
+		// rotatePart[LEFT_LOWER_THIGH][0] = 40.0f;
+		// rotatePart[LEFT_FOOT_TOES][0] = -30.0f;
+
+		rotatePart[LEFT_LOWER_THIGH][0] += 1.0f;
+		rotatePart[LEFT_FOOT_TOES][0] -= 0.75f;
+		rotatePart[ABS][0] += 0.25f;
+
+		if (rotatePart[LEFT_LOWER_THIGH][0] >= 40.0f)
+		{
+			rotatePart[LEFT_LOWER_THIGH][0] = 40.0f;
+			rotatePart[LEFT_FOOT_TOES][0] = -30.0f;
+			rotatePart[ABS][0] = 10.0f;
+			setReady = true;
+			Sleep(300);
+		}
+	}
+	else
+	{
+		if (!l_slide)
+		{
+			// left leg move front
+			/*rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
+			rotatePart[LEFT_FOOT][0] = 40.0f;*/
+
+			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0F;
+			rotatePart[LEFT_FOOT][0] += 0.8f;
+
+			if (rotatePart[LEFT_UPPER_THIGH][0] <= -40.0f)
+			{
+				rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
+				rotatePart[LEFT_FOOT][0] = 40.0f;
+			}
+
+			/*rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
+			rotatePart[RIGHT_FOOT][0] = -30.0f;*/
+
+			rotatePart[RIGHT_UPPER_THIGH][0] += 0.8f;
+			rotatePart[RIGHT_FOOT][0] -= 0.6f;
+
+			if (rotatePart[RIGHT_UPPER_THIGH][0] >= 40.0f)
+			{
+				rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
+				rotatePart[RIGHT_FOOT][0] = -30.0f;
+			}
+		}
+	}
+}
+
+void tesMode()
+{
+
+}
+
