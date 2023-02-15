@@ -24,9 +24,6 @@
     <ClCompile Include="objloader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="targa.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="imgui\imgui.cpp">
       <Filter>imgui</Filter>
     </ClCompile>
@@ -59,9 +56,6 @@
     <ClInclude Include="objloader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="vgl.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="imgui\imconfig.h">
       <Filter>imgui</Filter>
     </ClInclude>
@@ -89,11 +83,28 @@
     <ClInclude Include="imgui\imgui_impl_opengl3_loader.h">
       <Filter>imgui</Filter>
     </ClInclude>
+    <ClInclude Include="imgui\imGuIZMOquat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="DSPhong_Material.fp" />
-    <None Include="DSPhong_Material.vp" />
-    <None Include="light_box.fp" />
-    <None Include="light_box.vp" />
+    <None Include="blinn_phong_obj.fp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="blinn_phong_obj.vp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="light_box.fp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="light_box.vp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shadow.fp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
+    <None Include="shadow.vp.glsl">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

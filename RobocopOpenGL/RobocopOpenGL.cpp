@@ -1,6 +1,5 @@
 #include "main.h"
 
-vec3 camera = vec3(0, 0, 20);
 string partsList[PARTSNUM] = { "head",
 "neck",
 "upper_body",
@@ -53,12 +52,41 @@ float translatePart[PARTSNUM][3];
 float rotatePart[PARTSNUM][3];
 
 int main(int argc, char** argv) {
-	//init glfw
-	ImFont* font1 = NULL;
-	GLFWwindow* window = initProgramGLFW(font1);
-  
-	double lasttime = glfwGetTime();
-	float returnDegree = 0;
+	//init glfw, parameters, shaders, gui
+	GLFWwindow* window = initProgramGLFW();
+	
+	//init fonts (need to be same scope with main)
+	ImGuiIO& io = ImGui::GetIO(); (void)io;
+	font1 = io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
+	if (font1 == NULL) {
+		cout << "font load unsuccessful\n";
+	}
+	else {
+		cout << "font load successful\n";
+	}
+	IM_ASSERT(font1 != NULL);
+	io.Fonts->Build();
+	titleFont = io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 30.0f);
+	if (titleFont == NULL) {
+		cout << "title font load unsuccessful\n";
+	}
+	else {
+		cout << "title font load successful\n";
+	}
+	IM_ASSERT(titleFont != NULL);
+	io.Fonts->Build();
+
+	//loadObj and show the progress to the window
+	for (int i = 0; i < PARTSTOTAL+1; i++) {
+		loadingProgress[i] = false;
+	}
+	Obj2Buffer(window);
+
+	double lastTime = glfwGetTime();
+	double delta = 1.0 / TARGET_FPS;
+	double sz = 400;
+	/*quat qt2(1.0, 0, 0, 0);
+	vec3 light(1.0, 0, 0);*/
 	while (!glfwWindowShouldClose(window)) {
 		//Keep running, put the code here
 		//correct eyeAngleY
@@ -77,37 +105,80 @@ int main(int argc, char** argv) {
 
 		//push font
 		ImGui::PushFont(font1);
-
-		if (show_demo_window) {
-			ImGui::ShowDemoWindow(&show_demo_window);
-		}
+		
+		//ImGui::ShowDemoWindow(&show_demo_window);
 
 		{
-			ImGui::SetNextWindowSizeConstraints(ImVec2(400,1080), ImVec2(400,1080)); //width x height fixed
+			ImGui::SetNextWindowSizeConstraints(ImVec2(400,SCREENHEIGHT), ImVec2(400,SCREENHEIGHT)); //width x height fixed
 			ImGui::SetNextWindowPos(ImVec2(0, 0));
-			ImGui::Begin("Miscellaneous Toolbox");                          // Create a window called "Hello, world!" and append into it.
-			ImGui::Checkbox("Demo Window", &show_demo_window);
-			//ImGui::Checkbox("Show Light Box", &renderLightBox);
+			ImGui::Begin("Miscellaneous Toolbox");
+
+			//title 
+			ImGui::PushFont(titleFont);
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+			ImGui::Text("Robocop Demo Project");
+			ImGui::PopStyleColor();
+			ImGui::PopFont();
+			ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+			ImGui::Text("Warning! If you are using BoPoMoFo Keyboard");
+			ImGui::Text("Press Shift once, change the keyboard to English...");
+			ImGui::PopStyleColor();
+			ImGui::Text("Press ESC to quit...");
+
+			//for debugging only
+			//ImGui::Checkbox("Demo Window", &show_demo_window);
 			if (lightingFollowRobocop) {
-				lightPosition[0] = initialOffset[CROTCH][0];
-				lightPosition[1] = initialOffset[CROTCH][1] + robotShiftUp;
-				lightPosition[2] = initialOffset[CROTCH][2];
+				lightPosition[0] = translatePart[CROTCH][0];
+				lightPosition[1] = 25;
+				lightPosition[2] = translatePart[CROTCH][2];
 				discoticLighting = false;
 			}
 			if (discoticLighting) {
+				if (firstTimeDiscoticLighting) {
+					lastDiscoticLighting = glfwGetTime();
+					firstTimeDiscoticLighting = false;
+				}
 				lightingFollowRobocop = false;
+			}
+			else {
+				firstTimeDiscoticLighting = true;
 			}
 			if (ImGui::CollapsingHeader("Lighting related")) {
 				ImGui::Checkbox("Show Lighting box", &renderLightBox);
-				ImGui::SliderFloat3("Light position", lightPosition, -1000, 1000);
-				ImGui::Checkbox("Make Lighting follow Robocop", &lightingFollowRobocop);
-				ImGui::Checkbox("Discotic Lighting", &discoticLighting);
+				ImGui::SliderFloat("Light position X", &lightPosition[0], -TRANSLATEXLIMIT, TRANSLATEXLIMIT);
+				ImGui::SliderFloat("Light position Y", &lightPosition[1], 25, 50);
+				ImGui::SliderFloat("Light position Z", &lightPosition[2], -TRANSLATEZLIMIT, TRANSLATEZLIMIT);
+				static int tempRadioVar; 
+				if (lightingFollowRobocop) {
+					tempRadioVar = 0;
+				}
+				else if(discoticLighting){
+					tempRadioVar = 1;
+				}
+				else {
+					tempRadioVar = 2;
+				}
+				ImGui::RadioButton("Custom", &tempRadioVar, 2);
+				ImGui::RadioButton("Make Lighting follow Robocop", &tempRadioVar, 0);
+				ImGui::RadioButton("Discotic Lighting", &tempRadioVar, 1);
+				if (tempRadioVar == 0) {
+					lightingFollowRobocop = true;
+					discoticLighting = false;
+				}
+				else if (tempRadioVar == 1) {
+					lightingFollowRobocop = false;
+					discoticLighting = true;
+				}
+				else {
+					lightingFollowRobocop = false;
+					discoticLighting = false;
+				}
 				if (ImGui::Button("Reset Lighting")) {
 					lightingFollowRobocop = false;
 					discoticLighting = false;
-					lightPosition[0] = 0;
-					lightPosition[1] = 0;
-					lightPosition[2] = 0;
+					lightPosition[0] = 10;
+					lightPosition[1] = 25;
+					lightPosition[2] = 10;
 					ambientColor[0] = 0.1;
 					ambientColor[1] = 0.1;
 					ambientColor[2] = 0.1;
@@ -118,6 +189,9 @@ int main(int argc, char** argv) {
 					specularColor[1] = 1;
 					specularColor[2] = 1;
 					Shininess = 32;
+					kConstant = 1.0f;
+					kLinear = 0.09f;
+					kQuadratic = 0.032f;
 				}
 				if (ImGui::TreeNode("Ambient Color")) {
 					ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
@@ -138,22 +212,90 @@ int main(int argc, char** argv) {
 					ImGui::SliderFloat("Shininess", &Shininess, 2.0, 200);
 					ImGui::TreePop();
 				}
+				if (ImGui::TreeNode("Point Lighting Variables")) {
+					ImGui::SliderFloat("Kconstant", &kConstant, 0.1, 5);
+					ImGui::SliderFloat("Klinear", &kLinear, 0.005, 0.8);
+					ImGui::SliderFloat("Kquadratic", &kQuadratic, 0.001, 0.05);
+					ImGui::TreePop();
+				}
 			}
 			if (ImGui::CollapsingHeader("Projection Related")) {
 				ImGui::SliderFloat("Change FoV: ", &FoV, 30.0f, 90.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
 				ImGui::SliderFloat("Change near clip: ", &nearClip, 0.1f, 10.f);
 				ImGui::SliderFloat("Change far clip: ", &farClip, 50.f, 200.f);
 			}
-			if (ImGui::CollapsingHeader("View Related: ")) {
-				ImGui::SliderFloat("Change zoom: ", &eyedistance, 10.0f, 40.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
-				ImGui::SliderFloat("Change eye rotation: ", &eyeAngley, 0.f, 360.f);
+			if (ImGui::CollapsingHeader("View Related ")) {
+				viewChange = true;
+				ImGui::Text("Control for keyboard: ");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ARROW UP "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for zoom in");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ARROW DOWN "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for zoomout");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ARROW LEFT "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for turning left");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ARROW RIGHT "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for turning right");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ESC "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for quit");
+				ImGui::Separator();
+				ImGui::Text("Or use the slider below...");
+				ImGui::SliderFloat("Change zoom", &eyedistance, 10.0f, 40.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+				ImGui::SliderFloat("Change eye rotation", &eyeAngley, 0.f, 360.f);
 			}
-			if (ImGui::CollapsingHeader("Background color: ")) {
-				ImGui::SetColorEditOptions(ImGuiColorEditFlags_Float | ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_PickerHueWheel);
-				ImGui::ColorPicker3("", (float*)&clear_color); // Edit 3 floats representing a color
-			}
-
-			if (ImGui::CollapsingHeader("Current Modes: ")) {
+			//comment, this is only for debugging
+			//if (ImGui::CollapsingHeader("lightproject: ")) {
+			//	ImGui::SliderFloat("Change x: ", &lightProjectX, 0, 400.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+			//	ImGui::SliderFloat("Change y: ", &lightProjectY, 0.f, 400.f);
+			//	ImGui::SliderFloat("Change z: ", &lightProjectZ, 0.f, 10.f);
+			//	ImGui::SliderFloat("Change z far: ", &lightProjectZFar, 10.f, 400.f);
+			//	lightProjection = glm::ortho(-lightProjectX, lightProjectX, -lightProjectY, lightProjectY, lightProjectZ, lightProjectZFar);
+			//}
+			if (ImGui::CollapsingHeader("Current Modes")) {
+				ImGui::Text("Control for keyboard: ");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("WASD "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for walk");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("F "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for squat");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("G "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for jumping jack");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("H "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for gangnam style");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("J "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for moonwalk");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("K "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for push up");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("L "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for situp");
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+				ImGui::BulletText("ESC "); ImGui::SameLine();
+				ImGui::PopStyleColor();
+				ImGui::Text("for quit");
+				ImGui::Separator();
+				ImGui::Text("Or press the circle buttons below...");
 				static int currentMode;
 				static string animateInfo;
 				if (animateMode == IDLE) {
@@ -188,124 +330,300 @@ int main(int argc, char** argv) {
 				ImGui::RadioButton("MoonWalk", &currentMode, 5); ImGui::SameLine();
 				ImGui::RadioButton("Pushup", &currentMode, 6); ImGui::SameLine();
 				ImGui::RadioButton("Situp", &currentMode, 7);
-
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255, 0, 0, 255));
+				ImGui::Separator();
+				//ImGui::Text("Wait until each move is done before starting the next one!");
+				ImGui::PopStyleColor();
 				if (currentMode == 0) {
+					if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+						fromGangnamMoonwalk = true;
+					}
+					modeChangeExist = true;
 					animateMode = IDLE;
 					animateInfo = "IDLE";
 				}
 				else if (currentMode == 1) {
+					if (animateMode != WALK) {
+						if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+							fromGangnamMoonwalk = true;
+						}
+						modeChangeExist = true;
+						lastDirection = 4;
+					}
 					animateMode = WALK;
 					animateInfo = "WALK";
 				}
 				else if (currentMode == 2) {
+					if (animateMode != SQUAT) {
+						if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+							fromGangnamMoonwalk = true;
+						}
+						modeChangeExist = true;
+					}
 					animateMode = SQUAT;
 					animateInfo = "SQUAT";
 				}
 				else if (currentMode == 3) {
+					if (animateMode != JUMPINGJACK) {
+						if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+							fromGangnamMoonwalk = true;
+						}
+						modeChangeExist = true;
+					}
 					animateMode = JUMPINGJACK;
 					animateInfo = "JUMPING JACK";
 				}
 				else if (currentMode == 4) {
+					if (animateMode != GANGNAMSTYLE) {
+						modeChangeExist = true;
+					}
 					animateMode = GANGNAMSTYLE;
 					animateInfo = "GANGNAM STYLE";
 				}
 				else if (currentMode == 5) {
+					if (animateMode != MOONWALK) {
+						modeChangeExist = true;
+					}
 					animateMode = MOONWALK;
 					animateInfo = "MOON WALK";
 				}
 				else if (currentMode == 6) {
+					if (animateMode != PUSHUP) {
+						if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+							fromGangnamMoonwalk = true;
+						}
+						modeChangeExist = true;
+					}
 					animateMode = PUSHUP;
 					animateInfo = "PUSH UP";
 				}
 				else if (currentMode == 7) {
+					if (animateMode != SITUP) {
+						if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+							fromGangnamMoonwalk = true;
+						}
+						modeChangeExist = true;
+					}
 					animateMode = SITUP;
 					animateInfo = "SIT UP";
 				}
-				ImGui::Text("Current Mode = %s", animateInfo.c_str());
+				ImGui::Text("Current Mode = "); ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(255,0,0,255));
+				ImGui::Text("%s", animateInfo.c_str());
+				ImGui::PopStyleColor();
 			}
+			ImGui::Separator();
 			ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-			ImGui::Text("Left upper thigh: %.3f\n",rotatePart[LEFT_UPPER_THIGH][0]);
-			ImGui::Text("Right upper thigh: %.3f\n", rotatePart[RIGHT_UPPER_THIGH][0]);
-			ImGui::Text("Left upper thigh: %.3f\n", rotatePart[LEFT_UPPER_ARM][0]);
-			ImGui::Text("Right upper thigh: %.3f\n", rotatePart[RIGHT_UPPER_ARM][0]);
+			ImGui::Text("Current X Position: %.3f", translatePart[CROTCH][0]);
+			ImGui::Text("Current Y Position: %.3f", translatePart[CROTCH][1]);
+			ImGui::Text("Current Z Position: %.3f", translatePart[CROTCH][2]);
 			ImGui::End();
 		}
 		//popping font
 		ImGui::PopFont();
-		// Rendering
 
-		/*glfwSwapBuffers(window);
-
-		float ratio;
-		int width, height;
-		mat4 m, p, mvp;
-
-		glfwGetFramebufferSize(window, &width, &height);
-		ratio = width / (float)height;
-		glViewport(0, 0, width, height);*/
-		
 		//check based on animation
-		if (animateMode == IDLE)
-		{
+		if (animateMode == IDLE || modeChangeExist) {
+			resetGlobalVariables(); 
 			resetModel();
-			///////////
-// For walk
-			r_isFr = false;
-
-			r_isUp = true; // upper leg
-			r_isUp2 = false; // lower leg
-			r_isUp3 = false; // foot
-			r_isUp4 = true; // foot toes
-			r_is_return = false;
-
-			l_isUp = false; // upper leg
-			l_isUp2 = false; // lower leg
-			l_isUp3 = false; // foot
-			l_isUp4 = true; // foot toes
-			l_is_return = false;
-
-			///////////
-			// For Jumping Jack
-			isOpen = false;
-			squat1 = false;
-			squat2 = false;
-			pause = true;
-
-			///////////
-			// For Gangnam Style
-			setReadyGS = false;
-			jumpLeft = true;
-			isJump = true;
-			counter = 2;
-
-			///////////
-			// For Moon Walk
-			setReady = false;
-			l_slide = false;
+			viewChange = true;
+			if (animateMode == WALK) {
+				if (!wasdPressed) {
+					//for walking in place
+					startTimeMove = glfwGetTime();
+				}
+				else {
+					//set initial direction
+					lastDirection = direction;
+				}
+			}
+			if (animateMode == GANGNAMSTYLE) {
+				gangnamSong = SoundEngine->play2D("../Assets/music/gangnam.mp3", false,false,true);
+				startTimeMove = glfwGetTime();
+				discoticLighting = true;
+				lastDiscoticLighting = glfwGetTime();
+			}
+			else {
+				if (gangnamSong != NULL) {
+					gangnamSong->stop();
+					gangnamSong->drop(); //free memory
+					gangnamSong = NULL;
+				}
+			}
+			if (animateMode == MOONWALK) {
+				moonwalkSong = SoundEngine->play2D("../Assets/music/moonwalk.mp3", false, false, true);
+				rotatePart[CROTCH][0] = 0;
+				rotatePart[CROTCH][1] = 0;
+				rotatePart[CROTCH][2] = 0;
+				startTimeMove = glfwGetTime();
+				discoticLighting = true;
+				lastDiscoticLighting = glfwGetTime();
+			}
+			else {
+				if (moonwalkSong != NULL) {
+					moonwalkSong->stop();
+					moonwalkSong->drop(); //free memory
+					moonwalkSong = NULL;
+				}
+			}
+			if (fromGangnamMoonwalk) {
+				//reset discotic just in case
+				lightingFollowRobocop = false;
+				discoticLighting = false;
+				lightPosition[0] = 10;
+				lightPosition[1] = 25;
+				lightPosition[2] = 10;
+				ambientColor[0] = 0.1;
+				ambientColor[1] = 0.1;
+				ambientColor[2] = 0.1;
+				diffuseColor[0] = 0.8;
+				diffuseColor[1] = 0.8;
+				diffuseColor[2] = 0.8;
+				specularColor[0] = 1;
+				specularColor[1] = 1;
+				specularColor[2] = 1;
+				Shininess = 32;
+				kConstant = 1.0f;
+				kLinear = 0.09f;
+				kQuadratic = 0.032f;
+				fromGangnamMoonwalk = false;
+			}
+			modeChangeExist = false;
 		}
 		else  if (animateMode == WALK) {
 			for (int i = 0; i < 3; i++) {
 				walk();
 			}
+			if (walkSafeStop) {
+				if (lastDirection == 4) {
+					//on button click
+					if (glfwGetTime() - startTimeMove > 5) {
+						animateMode = IDLE;
+						modeChangeExist = true;
+					}
+				}
+				else {
+					lastDirection = direction;
+					if (wasdPressed) {
+						updateWalkTranslate();
+					}
+					else {
+						modeChangeExist = true;
+						animateMode = IDLE;
+					}
+				}
+			}
+			else {
+				updateWalkTranslate();
+			}
 		}
 		else if (animateMode == JUMPINGJACK) {
+			palmMode = OPEN;
 			jumpingJack();
+			if (jjSaveStop) {
+				modeChangeExist = true;
+				animateMode = IDLE;
+			}
+			//viewChange = true;
 		}
 		else if (animateMode == MOONWALK)
 		{
+			palmMode = OPEN;
 			moonWalk();
+			viewChange = true;
+			if (mwSaveStop && ((glfwGetTime() - startTimeMove) > 12.0)) {
+				//after more than 12 second, stop
+				animateMode = IDLE;
+				modeChangeExist = true;
+
+				//resetlighting
+				lightingFollowRobocop = false;
+				discoticLighting = false;
+				lightPosition[0] = 10;
+				lightPosition[1] = 25;
+				lightPosition[2] = 10;
+				ambientColor[0] = 0.1;
+				ambientColor[1] = 0.1;
+				ambientColor[2] = 0.1;
+				diffuseColor[0] = 0.8;
+				diffuseColor[1] = 0.8;
+				diffuseColor[2] = 0.8;
+				specularColor[0] = 1;
+				specularColor[1] = 1;
+				specularColor[2] = 1;
+				Shininess = 32;
+				kConstant = 1.0f;
+				kLinear = 0.09f;
+				kQuadratic = 0.032f;
+			}
+			//viewChange = true;
 		}
 		else if (animateMode == GANGNAMSTYLE)
 		{
 			palmMode = CLENCH;
 			gangnamStyle();
+			if (gsSaveStop && (glfwGetTime() - startTimeMove > 16.0)) {
+				animateMode = IDLE;
+				modeChangeExist = true;
+				
+				//resetlighting
+				lightingFollowRobocop = false;
+				discoticLighting = false;
+				lightPosition[0] = 10;
+				lightPosition[1] = 25;
+				lightPosition[2] = 10;
+				ambientColor[0] = 0.1;
+				ambientColor[1] = 0.1;
+				ambientColor[2] = 0.1;
+				diffuseColor[0] = 0.8;
+				diffuseColor[1] = 0.8;
+				diffuseColor[2] = 0.8;
+				specularColor[0] = 1;
+				specularColor[1] = 1;
+				specularColor[2] = 1;
+				Shininess = 32;
+				kConstant = 1.0f;
+				kLinear = 0.09f;
+				kQuadratic = 0.032f;
+			}
+			//viewChange = true;
 		}
-		else if (animateMode == TESMODE)
+		else if (animateMode == SQUAT)
 		{
-			tesMode();
+			palmMode = OPEN;
+			squat();
+			viewChange = true;
+			if (squatSaveStop) {
+				modeChangeExist = true;
+				animateMode = IDLE;
+			}
 		}
-
+		else if (animateMode == SITUP)
+		{
+			sitUp();
+			viewChange = true;
+			if (suSaveStop) {
+				modeChangeExist = true;
+				animateMode = IDLE;
+			}
+		}
+		else if (animateMode == PUSHUP)
+		{
+			pushUp();
+			viewChange = true;
+			if (puSaveStop) {
+				modeChangeExist = true;
+				animateMode = IDLE;
+			}
+		}
 		displayGLFW(window);
+
+		//frame rate limit
+		while (glfwGetTime() < lastTime + delta) {
+
+		}
+		lastTime = glfwGetTime();
+		
 	}
 
 
@@ -320,21 +638,109 @@ int main(int argc, char** argv) {
 	return 0;
 }
 
+void resetGlobalVariables() {
+	///////////
+	// For walk
+	r_isFr = false;
+
+	r_isUp = true; // upper leg
+	r_isUp2 = false; // lower leg
+	r_isUp3 = false; // foot
+	r_isUp4 = true; // foot toes
+	r_is_return = false;
+
+
+	l_isUp = false; // upper leg
+	l_isUp2 = false; // lower leg
+	l_isUp3 = false; // foot
+	l_isUp4 = true; // foot toes
+	l_is_return = false;
+
+	///////////
+	// For Jumping Jack
+	isOpen = false;
+	squat1 = false;
+	squat2 = false;
+	pause = true;
+	jjSaveStop = false;
+	jjCount = 0;
+
+	///////////
+	// For Gangnam Style
+	setReadyGS = false;
+	jumpLeft = true;
+	isJump = true;
+	counter = 2;
+	counter = 2;
+	gsSaveStop = false;
+
+	///////////
+	// For Sit Up
+	isSitUpready = false;
+	isSitUpready2 = false;
+	isUP = true;
+	sleepOnce = true;
+	times = 0;
+	isDone = false;
+	isDone2 = false;
+	suSaveStop = false;
+
+	///////////
+	// For Moon Walk
+	setReady = false;
+	l_slide = false;
+	moon_reset = false;
+	mwSaveStop = false;
+	mwcount = 0;
+	mwStartZ = translatePart[CROTCH][2];
+
+	///////////
+	// For Walk
+	isSquatReady = false;
+	isGoDown = true;
+	squatSaveStop = false;
+
+	///////////
+	// For Push up
+	isPushUpready = false;
+	isPushUpready2 = false;
+	pushDown = true;
+	isPDone = false;
+	isPDone2 = false;
+	pTimes = 0;
+	puSaveStop = false;
+
+	///////////
+	//for squat
+	isSquatReady = false;
+	isGoDown = true;
+	squatSaveStop = false;
+	squatCount = 0;
+}
+
 void resetModel() {
 	for (int i = 0; i < PARTSNUM; i++) {
-		translatePart[i][0] = 0.f;
-		translatePart[i][1] = 0.f;
-		translatePart[i][2] = 0.f;
-		rotatePart[i][0] = 0.f;
-		rotatePart[i][1] = 0.f;
-		rotatePart[i][2] = 0.f;
+		if (i != CROTCH) {
+			translatePart[i][0] = 0.f;
+			translatePart[i][1] = 0.f;
+			translatePart[i][2] = 0.f;
+			rotatePart[i][0] = 0.f;
+			rotatePart[i][1] = 0.f;
+			rotatePart[i][2] = 0.f;
+		}
+		else {
+			//for crotch, only reset the y of translate, but skip the y axis of rotate
+			translatePart[i][1] = 0.f;
+			rotatePart[i][0] = 0.f;
+			rotatePart[i][2] = 0.f;
+		}
 	}
 }
 
-GLFWwindow* initProgramGLFW(ImFont* font1) {
+GLFWwindow* initProgramGLFW() {
 	resetModel();
-	ModelBackground = mat4(1.0);
-	ModelBackground = translate(ModelBackground, vec3(0, backGroundShiftUp, 0));
+	ModelBackground = glm::mat4(1.0);
+	ModelBackground = glm::translate(ModelBackground, glm::vec3(0, backGroundShiftUp, 0));
 
 	//work backwards to correct the offset
 	initialOffset[LEFT_FOOT_TOES][0] -= initialOffset[LEFT_FOOT][0];
@@ -397,14 +803,13 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	initialOffset[UPPER_BODY][1] -= initialOffset[ABS][1];
 	initialOffset[UPPER_BODY][2] -= initialOffset[ABS][2];
 
-	
+	//our robot is flipped in xz plane, so translate should also be rotated
 	for (int i = 0; i < PARTSNUM; i++) {
 		initialOffset[i][0] *= -1;
 		initialOffset[i][2] *= -1;
 	}
 
 	if (!glfwInit()) {
-		cout << "Fail initialization of GLFW\n";
 		exit(EXIT_FAILURE);
 	}
 	glfwSetErrorCallback(error_callback);
@@ -412,35 +817,36 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	//create window and context
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
-	glfwWindowHint(GLFW_REFRESH_RATE, 60);
+	glfwWindowHint(GLFW_REFRESH_RATE, TARGET_FPS);
+
+	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
+	SCREENWIDTH = mode->width;
+	SCREENHEIGHT = mode->height;
 
 	//fullscreen
-	//GLFWwindow* window = glfwCreateWindow(1920, 1080, "Project1 - Robocop", glfwGetPrimaryMonitor(), NULL);
+	GLFWwindow* window = glfwCreateWindow(SCREENWIDTH, SCREENHEIGHT, "Project1 - Robocop", glfwGetPrimaryMonitor(), NULL);
 	
 	//windowed full screen
-	const GLFWvidmode* mode = glfwGetVideoMode(glfwGetPrimaryMonitor());
-	glfwWindowHint(GLFW_RED_BITS, mode->redBits);
+	/*glfwWindowHint(GLFW_RED_BITS, mode->redBits);
 	glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
 	glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
-	GLFWwindow* window = glfwCreateWindow(mode->width, mode->height, "Project1 - Robocop", NULL, NULL);
+	GLFWwindow* window = glfwCreateWindow(800, 800, "Project1 - Robocop", NULL, NULL);*/
 
 	if (!window) {
 		//window creation failed, check whether version apply with the machine
 		cout << "window creation failed\n";
 		exit(EXIT_FAILURE);
 	}
-	r_isUp = true; // upper leg
-	r_isUp2 = false; // lower leg
 
-	isOpen = false;
-	squat1 = false;
-	squat2 = false;
+	//reset global variables for animation
+	resetGlobalVariables();
 
+	//callback functions
 	glfwSetKeyCallback(window, KeyboardGLFW);
 	glfwMakeContextCurrent(window);
 
 	//init glew
-	glewExperimental = TRUE;
+	glewExperimental = GLFW_TRUE;
 	GLenum err = glewInit();
 	if (err != GLEW_OK) {
 		cout << "glew init failed: " << glewGetErrorString(err) << endl;
@@ -450,44 +856,23 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 
 
 	//multisample for polygons smooth
-	//glfw by default already use double buffering, depth buffer, and also (RGB?)
+	//glfw by default already use double buffering, depth buffer
 	glEnable(GL_MULTISAMPLE);
-	//glDisable(GL_DEPTH_TEST);
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_LESS);
 	glEnable(GL_CULL_FACE);
 	glCullFace(GL_BACK);
 
-	//glEnable(GL_DEPTH_TEST);
-    //glDepthFunc(GL_LEQUAL);
-	//glDisable(GL_DEPTH_TEST);
-	//glDisable(GL_CULL_FACE);
-	//glEnable(GL_CULL_FACE);
-	//glCullFace(GL_BACK);
-	//glDisable(GL_CULL_FACE);
+	glfwSwapInterval(0); // how many frame update before updating the screen? set 0 for no limit
 
-	glfwSwapInterval(1); // the time wait for every change
-
-	isFrame = false;
-	pNo = 0;
 	animateMode = IDLE;
 	palmMode = OPEN;
 
 	//init imgui
-	 // Setup Dear ImGui context
+	// Setup Dear ImGui context
 	IMGUI_CHECKVERSION();
 	ImGui::CreateContext();
 	ImGuiIO& io = ImGui::GetIO(); (void)io;
-
-	//set fonts
-	font1 = io.Fonts->AddFontFromFileTTF("fonts/Roboto-Medium.ttf", 16.0f);
-	if (font1 == NULL) {
-		cout << "load unsuccessful\n";
-	}
-	else {
-		cout << "load successful\n";
-	}
-	IM_ASSERT(font1 != NULL);
 
 	// Setup Dear ImGui style
 	ImGui::StyleColorsDark();
@@ -500,11 +885,7 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
 
-	//EBO
-	glGenBuffers(1, &EBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, EBO);
-
-	//for lighting
+	//for white light boxes
 	glGenVertexArrays(1, &lightVAO);
 	glBindVertexArray(lightVAO);
 	glGenBuffers(1, &lightBoxBuffer);
@@ -514,65 +895,108 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 	glGenBuffers(1, &lightBoxIndices);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(recTriangleStripOrder), recTriangleStripOrder, GL_STATIC_DRAW);
-
-	//for shadow
+	
+	//for shadow mapping
 	glGenFramebuffers(1, &depthMapFBO);
 	glGenTextures(1, &depthMap);
-	glBindTexture(GL_TEXTURE_2D, depthMap); //2d texture similar to image
-	//depth map we only care to its depth, sp set format ot GL_DEPTH_COMPONENT, each texture we give it a width and height of 1024
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+	//depth map we only care to its depth, so set format ot GL_DEPTH_COMPONENT. Set the width and height as desired
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	//parameterized the texture
+	//minification filter. It is applied when an image is zoomed out so far that multiple pixels
+	//Nearest neigbor filtering, does not attempt to scale the image
+	//Result is sharp / pixelated
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST); 
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+
+	//fix oversampling the outer region that is not reached by the light, make them area unreachable with the border to CLAMP to border
+	//and also set the border color to white, which means that the unreachable light basically clamped to it, no shadow
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+	float borderColor[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+	glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, borderColor);
 	//bind the frame buffer to the generated depth frame buffer
 	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+
 	//we only need depth information when rendering shadow, color will not affect, so no need to put color
 	//However, framebuffer object however needs color buffer, so we tell opengl we won't need color data by telling
 	//DrawBuffer and ReadBuffer to GL_NONE
 	glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthMap, 0);
 	glDrawBuffer(GL_NONE);
 	glReadBuffer(GL_NONE);
+
+	//check the frame buffer, if no problem, unbind
+	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+	if (Status != GL_FRAMEBUFFER_COMPLETE) {
+		printf("FB error, status: 0x%x\n", Status);
+		exit(EXIT_FAILURE);
+	}
 	glBindFramebuffer(GL_FRAMEBUFFER, 0); //unbind frame buffer
 
+	//upload shaders
+	//main shader
 	ShaderInfo shaders[] = {
-		{ GL_VERTEX_SHADER, "DSPhong_Material.vp" },//vertex shader
-		{ GL_FRAGMENT_SHADER, "DSPhong_Material.fp" },//fragment shader
+		{ GL_VERTEX_SHADER, "blinn_phong_obj.vp.glsl" },//vertex shader
+		{ GL_FRAGMENT_SHADER, "blinn_phong_obj.fp.glsl" },//fragment shader
 		{ GL_NONE, NULL } };
-	program = LoadShaders(shaders);//Ū��shader
+	program = LoadShaders(shaders);
 
+	//white box shader, separate so not affected by lighting
 	ShaderInfo lightshaders[] = {
-		{ GL_VERTEX_SHADER, "light_box.vp" },//vertex shader
-		{ GL_FRAGMENT_SHADER, "light_box.fp" },//fragment shader
+		{ GL_VERTEX_SHADER, "light_box.vp.glsl" },//vertex shader
+		{ GL_FRAGMENT_SHADER, "light_box.fp.glsl" },//fragment shader
 		{ GL_NONE, NULL }
 	};
 	renderLightProgram = LoadShaders(lightshaders);
 
-	glUseProgram(renderLightProgram);
+	//for shadow mapping shader
+	ShaderInfo depthshaders[] = {
+		{ GL_VERTEX_SHADER, "shadow.vp.glsl" },//vertex shader
+		{ GL_FRAGMENT_SHADER, "shadow.fp.glsl" },//fragment shader
+		{ GL_NONE, NULL }
+	};
+	depthProgram = LoadShaders(depthshaders);
 
+	//get uniform locations
+	//for white light box
+	glUseProgram(renderLightProgram);
 	ProjectionMatrixID = glGetUniformLocation(renderLightProgram, "Projection");
 	ViewMatrixID = glGetUniformLocation(renderLightProgram, "View");
 	ModelMatrixID = glGetUniformLocation(renderLightProgram, "ModelMatrix");
 
-	glUseProgram(program);
+	//for shadow mapping shader
+	glUseProgram(depthProgram);
+	lightSpaceID = glGetUniformLocation(depthProgram, "lightSpaceMatrix");
+	lightModelID = glGetUniformLocation(depthProgram, "model");
 
-	MatricesIdx = glGetUniformBlockIndex(program, "MatVP");
-	ModelID = glGetUniformLocation(program, "Model");
-	lightPosID = glGetUniformLocation(program, "vLightPosition");
+	//for main shader
+	glUseProgram(program);
+	MatricesIdx = glGetUniformBlockIndex(program, "MatVP"); //view+projection
+	ModelID = glGetUniformLocation(program, "Model"); // model
+	lightPosID = glGetUniformLocation(program, "vLightPosition"); //vec3 of light position
+	//Ka, Kd, Ks of each used mtl
 	M_KaID = glGetUniformLocation(program, "Material.Ka");
 	M_KdID = glGetUniformLocation(program, "Material.Kd");
 	M_KsID = glGetUniformLocation(program, "Material.Ks");
+	//vec4 of chosen ambient, diffuse and specular color
 	ambientID = glGetUniformLocation(program, "ambientColor");
 	diffuseID = glGetUniformLocation(program, "diffuseColor");
 	specularID = glGetUniformLocation(program, "specularColor");
+	//float to indicate shininess index for specularity
 	ShininessID = glGetUniformLocation(program, "Shininess");
+	//vec3 position of where my camera location is now, for blinn-phong technique
 	viewPosID = glGetUniformLocation(program, "vViewPos");
+	//the same mat4 lightspacematrix for depth map, but used again for this shader
+	lightSpaceOrigID = glGetUniformLocation(program, "lightSpaceMatrix");
+	//for attenuation of point lighting, kconstant, klinear, and kquadratic
+	KcID = glGetUniformLocation(program, "Kc");
+	KlID = glGetUniformLocation(program, "Kl");
+	KqID = glGetUniformLocation(program, "Kq");
 	
-
-	Projection = glm::perspective(80.0f, (float)(1920) / (1080), 0.1f, 100.f);
-	//glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
-
-	// Camera matrix
+	//projection matrix, FOR USER NOT FOR LIGHT!
+	Projection = glm::perspective(80.0f, (float)(SCREENWIDTH) / (SCREENHEIGHT), 0.1f, 100.f);
+	
+	//view matrix for user, not light
 	viewPos[0] = translatePart[CROTCH][0];
 	viewPos[1] = translatePart[CROTCH][1]+robotShiftUp+2;
 	viewPos[2] = translatePart[CROTCH][2]+eyedistance;
@@ -582,574 +1006,723 @@ GLFWwindow* initProgramGLFW(ImFont* font1) {
 		glm::vec3(0, 1, 0)  // Head is up (set to 0,1,0 to look upside-down)
 	);
 
-	Obj2Buffer();
-
 	//UBO
 	glGenBuffers(1, &UBO);
 	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(mat4) * 2, NULL, GL_DYNAMIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(glm::mat4) * 2, NULL, GL_DYNAMIC_DRAW);
 	//get uniform struct size
 	int UBOsize = 0;
 	glGetActiveUniformBlockiv(program, MatricesIdx, GL_UNIFORM_BLOCK_DATA_SIZE, &UBOsize);
 	//bind UBO to its idx
 	glBindBufferRange(GL_UNIFORM_BUFFER, 0, UBO, 0, UBOsize);
 	glUniformBlockBinding(program, MatricesIdx, 0);
-
-	/*
-	printf("Vendor: %s\n", glGetString (GL_VENDOR));
-	printf("Renderer: %s\n", glGetString (GL_RENDERER));
-	printf("Version: %s\n", glGetString (GL_VERSION));
-	printf("GLSL: %s\n", glGetString (GL_SHADING_LANGUAGE_VERSION));
-	*/
 	
+	//init bgm
+	SoundEngine = createIrrKlangDevice();
+	SoundEngine->play2D("../Assets/music/labAmbient.mp3", true); //loop
 	return window;
 }
 
-#define DOR(angle) (angle*3.1415/180);
-
-void displayLightSource(mat4 view, mat4 proj) {
+void displayLightSource(glm::mat4 view, glm::mat4 proj) {
 	glBindBuffer(GL_ARRAY_BUFFER, lightBoxBuffer);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, lightBoxIndices);
 	glEnableVertexAttribArray(0);
 
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	mat4 model = mat4(1.0);
-	model = translate(model, vec3(lightPosition[0], lightPosition[1], lightPosition[2]));
-	model = scale(model, vec3(lightScale, lightScale, lightScale));
+	glm::mat4 model = glm::mat4(1.0);
+	model = glm::translate(model, glm::vec3(lightPosition[0], lightPosition[1], lightPosition[2]));
+	model = glm::scale(model, glm::vec3(lightScale, lightScale, lightScale));
 	glUniformMatrix4fv(ModelMatrixID, 1, GL_FALSE, &model[0][0]);
-	mat4 viewMatrix = view;
-	mat4 projMatrix = proj;
+	glm::mat4 viewMatrix = view;
+	glm::mat4 projMatrix = proj;
 	glUniformMatrix4fv(ViewMatrixID, 1, GL_FALSE, &viewMatrix[0][0]);
 	glUniformMatrix4fv(ProjectionMatrixID, 1, GL_FALSE, &projMatrix[0][0]);
 	glDrawElementsBaseVertex(GL_TRIANGLE_STRIP, sizeof(recTriangleStripOrder) / sizeof(int), GL_UNSIGNED_INT, NULL,0);
 }
 
-void displayOnly(GLFWwindow* window) {
-	
-}
+void displayInitial(int currentIndices, GLFWwindow* window) {
+	//create new imgui frame
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
 
-void displayGLFW(GLFWwindow* window) {
-	//glClearColor(0.7, 0.7, 0.7, 1);
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+		int windowWidth = 700;
+		int windowHeight = 800; 
 
+		const ImU32 col = ImGui::GetColorU32(ImGuiCol_ButtonHovered); //color for buttom
+		const ImU32 bg = ImGui::GetColorU32(ImGuiCol_Button); //color for background color
+		ImGui::SetNextWindowSizeConstraints(ImVec2(windowWidth, windowHeight), ImVec2(windowWidth, windowHeight)); //width x height fixed
+		ImGui::SetNextWindowPos(ImVec2(SCREENWIDTH/2-windowWidth/2.0, SCREENHEIGHT / 2 - windowHeight / 2.0 - 50));
+		ImGui::Begin("Loading Obj...");
+		ImGui::PushFont(titleFont);
+		ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+		ImGui::Text("Welcome! Obj files are loading..."); ImGui::SameLine();
+		ImGui::Spinner("##spinner", 15, 6, col);
+		ImGui::PopStyleColor();
+		ImGui::PopFont();
+		ImGui::PushFont(font1);
+		ImGui::BufferingBar("##buffer_bar", ((float)currentIndices)/(PARTSTOTAL+1), ImVec2(400, 6), bg, col);
+		ImGui::Text("Please wait... Progress: ");
+		bool tempProgress[PARTSTOTAL + 1];
+		//create separate boolean array so user pressing the checkbox will not change the global variable
+		for (int j = 0; j < PARTSTOTAL + 1; j++) {
+			tempProgress[j] = loadingProgress[j];
+		}
+		//print the checkbox and the name in every line
+		for (int j = 0; j < PARTSTOTAL + 1; j++) {
+			if (currentIndices == j) 
+			{
+				//set different color for the parts that is used right now for uploading
+				ImGui::PushStyleColor(ImGuiCol_Text, IM_COL32(154, 230, 230, 255));
+			}
+			if (j < PARTSNUM) {
+				ImGui::Checkbox(partsList[j].c_str(), &tempProgress[j]);
+			}
+			else if (j < PARTSTOTAL) {
+				ImGui::Checkbox(extraBodyPart[j-PARTSNUM].c_str(), &tempProgress[j]);
+			}
+			else {
+				ImGui::Checkbox("background", &tempProgress[j]);
+			}
+			if (currentIndices == j)
+			{
+				ImGui::PopStyleColor();
+			}
+		}
+
+		
+		ImGui::PopFont();
+		ImGui::End();
+
+
+	//for the input inside current indices, it will be indicated with color red
 	ImGui::Render();
 	int display_w, display_h;
 	glfwGetFramebufferSize(window, &display_w, &display_h);
 	glViewport(0, 0, display_w, display_h);
 	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
-	//glClear(GL_COLOR_BUFFER_BIT);
 	
-	//usual rendering
-	glViewport(widthStart, heightStart, 1920, 1080);
-
-	//only update View when angle change, to save computation
-	if (viewChange) {
-		float eyeAngleRad = DOR(eyeAngley);
-		viewPos[0] = translatePart[CROTCH][0] + eyedistance * sin(eyeAngleRad);
-		viewPos[1] = translatePart[CROTCH][1] + robotShiftUp + 2;
-		viewPos[2] = translatePart[CROTCH][2] + eyedistance * cos(eyeAngleRad);
-		View = lookAt(
-			vec3(viewPos[0],viewPos[1],viewPos[2] ), // Camera is at (0,0,20), in World Space
-			vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), // and looks at the origin
-			vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
-		);
-		viewChange = false;
-	}
-
-	Projection = perspective(FoV, (float)(1920 - widthStart) / (1080 - heightStart), nearClip, farClip);
-
-	glBindVertexArray(lightVAO);
-	glUseProgram(renderLightProgram);
-	if (discoticLighting) {
-		mat4 lightPosMV(1.0);
-		float currentTime = getTime();
-		lightPosMV = translate(lightPosMV, vec3(sinf(5.1f * currentTime) * 2.5f, cosf(5.7f * currentTime) * 2.5f, sinf(5.3f * currentTime) * cosf(5.5f * currentTime) * 2.5f));
-		lightPosMV = rotate(lightPosMV, currentTime * 45.0f, vec3(0.0f, 1.0f, 0.0f));
-		lightPosMV = rotate(lightPosMV, currentTime * 81.0f, vec3(1.0f, 0.0f, 0.0f));
-		vec4 robocopPos(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2], 1.0f);
-		robocopPos = lightPosMV * robocopPos;
-		lightPosition[0] = robocopPos[0];
-		lightPosition[1] = robocopPos[1];
-		lightPosition[2] = robocopPos[2];
-	}
-	if (renderLightBox) {
-		displayLightSource(View, Projection);
-	}
-
-	glBindVertexArray(VAO);
-	glUseProgram(program);//uniform�ѼƼƭȫe������use shader
-	myUpdateModel();
-
-	//update data to UBO for MVP
-	glBindBuffer(GL_UNIFORM_BUFFER, UBO);
-	glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(mat4), &View);
-	glBufferSubData(GL_UNIFORM_BUFFER, sizeof(mat4), sizeof(mat4), &Projection);
-	glBindBuffer(GL_UNIFORM_BUFFER, 0);
-
-	GLuint offset[3] = { 0,0,0 };//offset for vertices , uvs , normals
-	glUniform4fv(ambientID, 1, &ambientColor[0]);
-	glUniform4fv(diffuseID, 1, &diffuseColor[0]);
-	glUniform4fv(specularID, 1, &specularColor[0]);
-	glUniform1fv(ShininessID, 1, &Shininess);
-	glUniform3fv(viewPosID, 1, &viewPos[0]);
-	for (int i = 0; i < PARTSNUM; i++) {
-		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Models[i][0][0]);
-		glUniform3fv(lightPosID, 1, &lightPosition[0]);
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
-
-
-		//handle extra part substitution
-		int currentIndex = i; //for later mtls accessing
-		if (palmMode == CLENCH && (i == 15||i==18)) {
-			GLuint tempOffset[3] = { offset[0], offset[1], offset[2] };
-			
-			if (i == 15) {
-				for (int j = 15; j < PARTSNUM; j++) {
-					tempOffset[0] += vertices_size[j] * sizeof(vec3);
-					tempOffset[1] += uvs_size[j] * sizeof(vec2);
-					tempOffset[2] += normals_size[j] * sizeof(vec3);
-				}
-				currentIndex = PARTSNUM;
-			}
-			else {
-				for (int j = 18; j < PARTSNUM+1; j++) {
-					tempOffset[0] += vertices_size[j] * sizeof(vec3);
-					tempOffset[1] += uvs_size[j] * sizeof(vec2);
-					tempOffset[2] += normals_size[j] * sizeof(vec3);
-				}
-				currentIndex = PARTSNUM+1;
-			}
-
-
-			glVertexAttribPointer(0,				//location
-				3,				//vec3
-				GL_FLOAT,			//type
-				GL_FALSE,			//not normalized
-				0,				//strip
-				(void*)tempOffset[0]);//buffer offset
-	//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
-			offset[0] += vertices_size[i] * sizeof(vec3);
-
-			// 2nd attribute buffer : UVs
-			glEnableVertexAttribArray(1);//location 1 :vec2 UV
-			glBindBuffer(GL_ARRAY_BUFFER, uVBO);
-			glVertexAttribPointer(1,
-				2,
-				GL_FLOAT,
-				GL_FALSE,
-				0,
-				(void*)tempOffset[1]);
-			//(location,vec2,type,�T�w�I,�s���I�������q,point)
-			offset[1] += uvs_size[i] * sizeof(vec2);
-
-			// 3rd attribute buffer : normals
-			glEnableVertexAttribArray(2);//location 2 :vec3 Normal
-			glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-			glVertexAttribPointer(2,
-				3,
-				GL_FLOAT,
-				GL_FALSE,
-				0,
-				(void*)tempOffset[2]);
-			//(location,vec3,type,�T�w�I,�s���I�������q,point)
-			offset[2] += normals_size[i] * sizeof(vec3);
-		}
-		else {
-
-			glVertexAttribPointer(0,				//location
-				3,				//vec3
-				GL_FLOAT,			//type
-				GL_FALSE,			//not normalized
-				0,				//strip
-				(void*)offset[0]);//buffer offset
-	//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
-			offset[0] += vertices_size[i] * sizeof(vec3);
-
-			// 2nd attribute buffer : UVs
-			glEnableVertexAttribArray(1);//location 1 :vec2 UV
-			glBindBuffer(GL_ARRAY_BUFFER, uVBO);
-			glVertexAttribPointer(1,
-				2,
-				GL_FLOAT,
-				GL_FALSE,
-				0,
-				(void*)offset[1]);
-			//(location,vec2,type,�T�w�I,�s���I�������q,point)
-			offset[1] += uvs_size[i] * sizeof(vec2);
-
-			// 3rd attribute buffer : normals
-			glEnableVertexAttribArray(2);//location 2 :vec3 Normal
-			glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-			glVertexAttribPointer(2,
-				3,
-				GL_FLOAT,
-				GL_FALSE,
-				0,
-				(void*)offset[2]);
-			//(location,vec3,type,�T�w�I,�s���I�������q,point)
-			offset[2] += normals_size[i] * sizeof(vec3);
-		}
-
-		int vertexIDoffset = 0;//glVertexID's offset 
-		string mtlname;//material name
-		vec3 Ks = vec3(1, 1, 1);//because .mtl excluding specular , so give it here.
-
-		for (int j = 0; j < mtls[currentIndex].size(); j++) {//
-			mtlname = mtls[currentIndex][j];
-			//find the material diffuse color in map:KDs by material name.
-			glUniform3fv(M_KaID, 1, &KAs[mtlname][0]);
-			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
-			glUniform3fv(M_KsID, 1, &KSs[mtlname][0]);
-			//          (primitive   , glVertexID base , vertex count    )
-			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[currentIndex][j + 1] * 3);
-			//we draw triangles by giving the glVertexID base and vertex count is face count*3
-			vertexIDoffset += faces[currentIndex][j + 1] * 3;//glVertexID's base offset is face count*3
-		}//end for loop for draw one part of the robot	
-
-	}//end for loop for updating and drawing model
-
-	//offset added by extra parts offset
-	for (int j = PARTSNUM; j < PARTSTOTAL; j++) {
-		offset[0] += vertices_size[j] * sizeof(vec3);
-		offset[1] += uvs_size[j] * sizeof(vec2);
-		offset[2] += normals_size[j] * sizeof(vec3);
-	}
-
-	if (useBackground) {
-		glUniformMatrix4fv(ModelID, 1, GL_FALSE, &ModelBackground[0][0]);
-
-		glBindBuffer(GL_ARRAY_BUFFER, VBO);
-		// 1rst attribute buffer : vertices
-		glEnableVertexAttribArray(0);
-		glVertexAttribPointer(0,				//location
-			3,				//vec3
-			GL_FLOAT,			//type
-			GL_FALSE,			//not normalized
-			0,				//strip
-			(void*)offset[0]);//buffer offset
-//(location,vec3,type,�T�w�I,�s���I�������q,buffer point)
-		offset[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
-
-		// 2nd attribute buffer : UVs
-		glEnableVertexAttribArray(1);//location 1 :vec2 UV
-		glBindBuffer(GL_ARRAY_BUFFER, uVBO);
-		glVertexAttribPointer(1,
-			2,
-			GL_FLOAT,
-			GL_FALSE,
-			0,
-			(void*)offset[1]);
-		//(location,vec2,type,�T�w�I,�s���I�������q,point)
-		offset[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
-
-		// 3rd attribute buffer : normals
-		glEnableVertexAttribArray(2);//location 2 :vec3 Normal
-		glBindBuffer(GL_ARRAY_BUFFER, nVBO);
-		glVertexAttribPointer(2,
-			3,
-			GL_FLOAT,
-			GL_FALSE,
-			0,
-			(void*)offset[2]);
-		//(location,vec3,type,�T�w�I,�s���I�������q,point)
-		offset[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
-
-		int vertexIDoffset = 0;//glVertexID's offset 
-		string mtlname;//material name
-		vec3 Ks = vec3(1, 1, 1);//because .mtl excluding specular , so give it here.
-		for (int j = 0; j < mtls[PARTSNUM].size(); j++) {//
-			mtlname = mtls[PARTSTOTAL][j];
-			//find the material diffuse color in map:KDs by material name.
-			glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
-			glUniform3fv(M_KsID, 1, &Ks[0]);
-			//          (primitive   , glVertexID base , vertex count    )
-			glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[PARTSTOTAL][j + 1] * 3);
-			//we draw triangles by giving the glVertexID base and vertex count is face count*3
-			vertexIDoffset += faces[PARTSTOTAL][j + 1] * 3;//glVertexID's base offset is face count*3
-		}//end for loop for draw one part of the robot
-	}
-
 	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-
-	glfwSwapBuffers(window);//�մ��e�x�M��xbuffer ,���Obuffer�e���M�e�xbuffer�洫�ϧڭ̬ݨ���
+	glfwSwapBuffers(window);
 	glfwPollEvents();
 }
 
-void Obj2Buffer() {
-	std::vector<vec3> Kds;
-	std::vector<vec3> Kas;
-	std::vector<vec3> Kss;
+void displayOnly(bool depthMode) {
+	// function purely for drawing, choose depthMode as true if we want to render with
+	//respect to depth shader
+	if (renderLightBox && !depthMode) {
+		glBindVertexArray(lightVAO);
+		glUseProgram(renderLightProgram);
+		displayLightSource(View, Projection);
+	}
+	if (depthMode) {
+		//REMEMBER FOR DEPTH SHADER, WE DONT NEED TO RENDER THE BACKGROUND. WE ONLY NEED TO RENDER THE ROBOT ITSELF
+		//ALSO, ONLY NEED VERTICES, DISCARD UV AND NORMAL  IN THIS RENDER
+		glCullFace(GL_FRONT); //to fix peter panning
+		glUseProgram(depthProgram);
+		glBindVertexArray(VAO); //bind regular VAO, just in case the previous one is lightVAO
+		myUpdateModel();
+
+		//update data to UBO for MVP
+		GLuint offset[3] = { 0,0,0 };//offset for vertices , uvs , normals
+		glUniformMatrix4fv(lightSpaceID, 1, GL_FALSE, &lightSpace[0][0]);
+		for (int i = 0; i < PARTSNUM; i++) {
+			glUniformMatrix4fv(lightModelID, 1, GL_FALSE, &Models[i][0][0]);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glEnableVertexAttribArray(0);
+
+			//handle extra part substitution
+			int currentIndex = i; //for later mtls accessing
+			if (palmMode == CLENCH && (i == 15 || i == 18)) {
+				GLuint tempOffset[3] = { offset[0], offset[1], offset[2] }; //tempOffset are used to shift the offset to the end of the non-extra parts
+
+				if (i == 15) {
+					for (int j = 15; j < PARTSNUM; j++) {
+						tempOffset[0] += vertices_size[j] * sizeof(glm::vec3);
+						tempOffset[1] += uvs_size[j] * sizeof(glm::vec2);
+						tempOffset[2] += normals_size[j] * sizeof(glm::vec3);
+					}
+					currentIndex = PARTSNUM;
+				}
+				else {
+					for (int j = 18; j < PARTSNUM + 1; j++) {
+						tempOffset[0] += vertices_size[j] * sizeof(glm::vec3);
+						tempOffset[1] += uvs_size[j] * sizeof(glm::vec2);
+						tempOffset[2] += normals_size[j] * sizeof(glm::vec3);
+					}
+					currentIndex = PARTSNUM + 1;
+				}
+
+
+				glVertexAttribPointer(0, 3,	GL_FLOAT, GL_FALSE,	0, (void*)tempOffset[0]);
+				offset[0] += vertices_size[i] * sizeof(glm::vec3);
+			}
+			else {
+				glVertexAttribPointer(0, 3,	GL_FLOAT,GL_FALSE,0, (void*)offset[0]);//buffer offset
+				offset[0] += vertices_size[i] * sizeof(glm::vec3);
+			}
+			int vertexIDoffset = 0;
+			for (int j = 0; j < mtls[currentIndex].size(); j++) {//
+				glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[currentIndex][j + 1] * 3);
+				vertexIDoffset += faces[currentIndex][j + 1] * 3;
+			}	
+		}
+
+		//offset added by extra parts offset
+		for (int j = PARTSNUM; j < PARTSTOTAL; j++) {
+			offset[0] += vertices_size[j] * sizeof(glm::vec3);
+			offset[1] += uvs_size[j] * sizeof(glm::vec2);
+			offset[2] += normals_size[j] * sizeof(glm::vec3);
+		}
+		glCullFace(GL_BACK); //return to original for usual render
+	}
+	else {
+		//usual render
+		glBindVertexArray(VAO);
+		glUseProgram(program);
+		myUpdateModel(); //based on the contents of the translatePart and rotatePart, update the Models mat4 array
+
+		//update data to UBO for MVP
+		glBindBuffer(GL_UNIFORM_BUFFER, UBO);
+		glBufferSubData(GL_UNIFORM_BUFFER, 0, sizeof(glm::mat4), &View);
+		glBufferSubData(GL_UNIFORM_BUFFER, sizeof(glm::mat4), sizeof(glm::mat4), &Projection);
+		glBindBuffer(GL_UNIFORM_BUFFER, 0);
+		glUniform4fv(ambientID, 1, &ambientColor[0]);
+		glUniform4fv(diffuseID, 1, &diffuseColor[0]);
+		glUniform4fv(specularID, 1, &specularColor[0]);
+		glUniform1fv(ShininessID, 1, &Shininess);
+		glUniform3fv(viewPosID, 1, &viewPos[0]);
+		glUniformMatrix4fv(lightSpaceOrigID, 1, GL_FALSE, &lightSpace[0][0]);
+		glActiveTexture(GL_TEXTURE0);
+		glUniform1fv(KcID, 1, &kConstant);
+		glUniform1fv(KlID, 1, &kLinear);
+		glUniform1fv(KqID, 1, &kQuadratic);
+		glUniform3fv(lightPosID, 1, &lightPosition[0]);
+		//use the depth map we have generated previously
+		glBindTexture(GL_TEXTURE_2D, depthMap);
+
+		GLuint offset[3] = { 0,0,0 };//offset for vertices , uvs , normals
+		for (int i = 0; i < PARTSNUM; i++) {
+			//bind model exclusively with each model matrix
+			glUniformMatrix4fv(ModelID, 1, GL_FALSE, &Models[i][0][0]);
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+			glEnableVertexAttribArray(0);
+
+
+			//handle extra part substitution
+			int currentIndex = i; //for later mtls accessing, because we might access different index for extra parts
+			if (palmMode == CLENCH && (i == 15 || i == 18)) {
+				GLuint tempOffset[3] = { offset[0], offset[1], offset[2] };
+
+				if (i == 15) {
+					for (int j = 15; j < PARTSNUM; j++) {
+						tempOffset[0] += vertices_size[j] * sizeof(glm::vec3);
+						tempOffset[1] += uvs_size[j] * sizeof(glm::vec2);
+						tempOffset[2] += normals_size[j] * sizeof(glm::vec3);
+					}
+					currentIndex = PARTSNUM;
+				}
+				else {
+					for (int j = 18; j < PARTSNUM + 1; j++) {
+						tempOffset[0] += vertices_size[j] * sizeof(glm::vec3);
+						tempOffset[1] += uvs_size[j] * sizeof(glm::vec2);
+						tempOffset[2] += normals_size[j] * sizeof(glm::vec3);
+					}
+					currentIndex = PARTSNUM + 1;
+				}
+
+				//first, vertices
+				glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void*)tempOffset[0]);//buffer offset
+				offset[0] += vertices_size[i] * sizeof(glm::vec3); //for next vertices starting point
+
+				//next, uv
+				glEnableVertexAttribArray(1);
+				glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+				glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,(void*)tempOffset[1]);
+				offset[1] += uvs_size[i] * sizeof(glm::vec2);
+
+				//finally, normal
+				glEnableVertexAttribArray(2);
+				glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)tempOffset[2]);
+				offset[2] += normals_size[i] * sizeof(glm::vec3);
+			}
+			else {
+				//the same, but this is for default part
+				//first, vertices
+				glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset[0]);//buffer offset
+				offset[0] += vertices_size[i] * sizeof(glm::vec3); //for next vertices starting point
+
+				//next, uv
+				glEnableVertexAttribArray(1);
+				glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+				glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 0, (void*)offset[1]);
+				offset[1] += uvs_size[i] * sizeof(glm::vec2);
+
+				//finally, normal
+				glEnableVertexAttribArray(2);
+				glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+				glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, 0, (void*)offset[2]);
+				offset[2] += normals_size[i] * sizeof(glm::vec3);
+			}
+			int vertexIDoffset = 0;//glVertexID's offset 
+			string mtlname;//material name
+			for (int j = 0; j < mtls[currentIndex].size(); j++) {//
+				mtlname = mtls[currentIndex][j];
+				//bind Ka, Kd and Ks of current material
+				glUniform3fv(M_KaID, 1, &KAs[mtlname][0]);
+				glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
+				glUniform3fv(M_KsID, 1, &KSs[mtlname][0]);
+				//faces[currentIndex][j + 1] * 3
+				glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[currentIndex][j + 1] * 3);
+				vertexIDoffset += faces[currentIndex][j + 1] * 3; 
+			}	
+		}
+
+		//offset added by extra parts offset
+		for (int j = PARTSNUM; j < PARTSTOTAL; j++) {
+			offset[0] += vertices_size[j] * sizeof(glm::vec3);
+			offset[1] += uvs_size[j] * sizeof(glm::vec2);
+			offset[2] += normals_size[j] * sizeof(glm::vec3);
+		}
+
+		//render background
+		if (useBackground) {
+			//bind model matrix for background
+			glUniformMatrix4fv(ModelID, 1, GL_FALSE, &ModelBackground[0][0]);
+
+			glBindBuffer(GL_ARRAY_BUFFER, VBO);
+
+			//vertices
+			glEnableVertexAttribArray(0);
+			glVertexAttribPointer(0,3,GL_FLOAT,GL_FALSE,0,(void*)offset[0]);
+			offset[0] += vertices_size[PARTSTOTAL] * sizeof(glm::vec3);
+
+			//uv
+			glEnableVertexAttribArray(1);
+			glBindBuffer(GL_ARRAY_BUFFER, uVBO);
+			glVertexAttribPointer(1,2,GL_FLOAT,GL_FALSE,0,(void*)offset[1]);
+			offset[1] += uvs_size[PARTSTOTAL] * sizeof(glm::vec2);
+
+			// normal
+			glEnableVertexAttribArray(2);
+			glBindBuffer(GL_ARRAY_BUFFER, nVBO);
+			glVertexAttribPointer(2,3,GL_FLOAT,GL_FALSE,0,(void*)offset[2]);
+			offset[2] += normals_size[PARTSTOTAL] * sizeof(glm::vec3);
+
+			int vertexIDoffset = 0;
+			string mtlname;
+			for (int j = 0; j < mtls[PARTSTOTAL].size(); j++) {//
+				mtlname = mtls[PARTSTOTAL][j];
+				glUniform3fv(M_KaID, 1, &KAs[mtlname][0]);
+				glUniform3fv(M_KdID, 1, &KDs[mtlname][0]);
+				glUniform3fv(M_KsID, 1, &KSs[mtlname][0]);
+				glDrawArrays(GL_TRIANGLES, vertexIDoffset, faces[PARTSTOTAL][j + 1] * 3);
+				vertexIDoffset += faces[PARTSTOTAL][j + 1] * 3;
+			}
+		}
+	}
+}
+
+void displayGLFW(GLFWwindow* window) {
+	//render pipeline
+
+	//accumulate data for gui to be rendered
+	ImGui::Render();
+	int display_w, display_h;
+	glfwGetFramebufferSize(window, &display_w, &display_h);
+	glViewport(0, 0, display_w, display_h);
+	glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	
+	//only update View when angle change, to save computation
+	if (viewChange) {
+		float eyeAngleRad = deg2rad(eyeAngley);
+		viewPos[0] = translatePart[CROTCH][0] + eyedistance * sin(eyeAngleRad);
+		viewPos[1] = translatePart[CROTCH][1] + robotShiftUp + 2;
+		viewPos[2] = translatePart[CROTCH][2] + eyedistance * cos(eyeAngleRad);
+		View = glm::lookAt(
+			glm::vec3(viewPos[0],viewPos[1],viewPos[2] ), //camera position
+			glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1] + robotShiftUp, translatePart[CROTCH][2]), //point to crotch
+			glm::vec3(0, 1, 0) //up vector parallel to y axis
+		);
+		viewChange = false;
+	}
+	//projection matrix update, just in case it is changed in GuI input
+	Projection = glm::perspective(FoV, (float)(SCREENWIDTH - widthStart) / (SCREENHEIGHT - heightStart), nearClip, farClip);
+	//handles discoticLighting
+	if (discoticLighting) {
+		glm::mat4 lightPosMV(1.0);
+		float currentTime = getTime();
+		lightPosMV = glm::translate(lightPosMV, glm::vec3(sinf(5.1f * currentTime) * 2.f, cosf(5.7f * currentTime) * 2.f, sinf(5.3f * currentTime) * cosf(5.5f * currentTime) * 2.f));
+		lightPosMV = glm::rotate(lightPosMV, currentTime * 45.0f, glm::vec3(0.0f, 1.0f, 0.0f));
+		lightPosMV = glm::rotate(lightPosMV, currentTime * 81.0f, glm::vec3(1.0f, 0.0f, 0.0f));
+		lightPosMV = glm::translate(lightPosMV, glm::vec3(0, 40, 0));
+		glm::vec4 robocopPos(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2], 1.0f);
+		robocopPos = lightPosMV * robocopPos;
+		//offset based on robocop Position
+		
+		//update global variable
+		lightPosition[0] = robocopPos[0];
+		lightPosition[1] = robocopPos[1];
+		lightPosition[2] = robocopPos[2];
+
+		//clamp light position
+		if (lightPosition[0] < -TRANSLATEXLIMIT) {
+			lightPosition[0] = -TRANSLATEXLIMIT;
+		}
+		else if (lightPosition[0] > TRANSLATEXLIMIT) {
+			lightPosition[0] = TRANSLATEXLIMIT;
+		}
+		if (lightPosition[2] < -TRANSLATEZLIMIT) {
+			lightPosition[2] = -TRANSLATEZLIMIT;
+		}
+		else if (lightPosition[2] > TRANSLATEZLIMIT) {
+			lightPosition[2] = TRANSLATEZLIMIT;
+		}
+		if (lightPosition[1] < TRANSLATEYLOWERLIMIT) {
+			lightPosition[1] = TRANSLATEYLOWERLIMIT;
+		}
+		else if (lightPosition[1] > TRANSLATEYUPPERLIMIT) {
+			lightPosition[1] = TRANSLATEYUPPERLIMIT;
+		}
+
+		//handles change color, different period of color change for moonwalk and gangnam style (and other discotic lighting)
+		if (animateMode == MOONWALK) {
+			if ((glfwGetTime() - lastDiscoticLighting) > 0.5)
+			{
+				//change discotic color
+				ambientColor[0] = 0.1;
+				ambientColor[1] = 0.1;
+				ambientColor[2] = 0.1;
+				diffuseColor[0] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				diffuseColor[1] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				diffuseColor[2] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				lastDiscoticLighting = glfwGetTime();
+			}
+		}
+		else {
+			if ((glfwGetTime() - lastDiscoticLighting) > 1.7)
+			{
+				//change discotic color
+				ambientColor[0] = 0.1;
+				ambientColor[1] = 0.1;
+				ambientColor[2] = 0.1;
+				diffuseColor[0] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				diffuseColor[1] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				diffuseColor[2] = static_cast <float> (rand()) / static_cast <float> (RAND_MAX);
+				lastDiscoticLighting = glfwGetTime();
+			}
+		}
+	}
+
+	//update light space matrix
+	glm::vec3 curLightPos(lightPosition[0], lightPosition[1], lightPosition[2]);
+	glm::mat4 lightView = glm::lookAt(curLightPos,
+		glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1]+robotShiftUp, translatePart[CROTCH][2]),
+		glm::vec3(0, 1, 0));
+	lightSpace = lightProjection * lightView; //light projection will never change, so just set to global variable.
+	//-------------- for the record, this is lightProjection content  -----------------
+	//lightProjection = glm::ortho(-79, 79, -75, 75, 0.4, 106.7);
+	//----------------------------------------------------------------------------------
+	
+	//render to depth map, for shadow mapping
+	glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
+	glBindFramebuffer(GL_FRAMEBUFFER, depthMapFBO);
+		glClear(GL_DEPTH_BUFFER_BIT); 
+		displayOnly(true);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	//usual rendering
+	glViewport(widthStart, heightStart, SCREENWIDTH, SCREENHEIGHT);
+	glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+	glBindTexture(GL_TEXTURE_2D, depthMap);
+		displayOnly(false);
+
+	//render gui
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+	glfwSwapBuffers(window);
+	glfwPollEvents();
+}
+
+void Obj2Buffer(GLFWwindow* window) {
+	std::vector<glm::vec3> Kds;
+	std::vector<glm::vec3> Kas;
+	std::vector<glm::vec3> Kss;
 	std::vector<std::string> Materials;//mtl-name
 	std::string texture;
+
+	//load MTLs, for every parts, extra parts, and backgrounds. 
 	for (int i = 0; i < PARTSNUM; i++) {
-		//for debug purposes
-
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
-
 	}
 	for (int i = 0; i < EXTRAPARTS; i++) {
 		loadMTL(("../Assets/Obj/" + partsList[i] + ".mtl").c_str(), Kds, Kas, Kss, Materials, texture);
 	}
-	//printf("%d\n",texture);
 	if (useBackground) {
 		loadMTL("../Assets/Obj/Sci_Fi_Corridor.mtl", Kds, Kas, Kss, Materials, texture);
-	}/*
-	cout << "Kds size: " << Kds.size() << endl;
-	cout << "Kas size: " << Kas.size() << endl;
-	cout << "Kss size: " << Kss.size() << endl;*/
+	}
+	//identify make a mapping of MTLs KD,KA and KS based on each name, just in case there is duplicity
 	for (int i = 0; i < Materials.size(); i++) {
 		string mtlname = Materials[i];
-		//  name            vec3
 		KDs[mtlname] = Kds[i];
 		KAs[mtlname] = Kas[i];
 		KSs[mtlname] = Kss[i];
 	}
 
-
+	displayInitial(-1, window); //show progress of loading on GUI
 	for (int i = 0; i < PARTSNUM; i++) {
+		//for debug, skip certain indices
 		if (!renderBodyTop && (i >= 0 && i <= 3 || i >= 13)) {
 			continue;
 		}
-
 		if (!renderHead && (i >= 0 && i <= 1)) {
 			continue;
 		}
-
 		if (!renderArm && (i >= 13)) {
 			continue;
 		}
-
 		if (!renderLeg && (i >= 5 && i <= 12)) {
 			continue;
 		}
+
+
+		displayInitial(i,window); //for displaying loading progress;
 		load2Buffer("../Assets/Obj/"+partsList[i]+".obj", i);
+		loadingProgress[i] = true; //updateProgress
 	}
 	for (int i = 0; i < EXTRAPARTS; i++) {
+		//for debug, skip certain indices
 		if (!renderBodyTop || !renderArm) {
 			continue;
 		}
+		displayInitial(i+PARTSNUM,window); //for displaying loading progress;
 		load2Buffer("../Assets/Obj/" + extraBodyPart[i] + ".obj", i + PARTSNUM);
+		loadingProgress[i+PARTSNUM] = true; //updateProgress
 	}
+	//for debugging purposes, skip loading if background is disabled
 	if (useBackground) {
+		displayInitial(PARTSTOTAL,window); //for displaying loading progress;
 		load2Buffer("../Assets/Obj/Sci_Fi_Corridor.obj", PARTSTOTAL);
+		loadingProgress[PARTSTOTAL] = true; //updateProgress
 	}
-
+	displayInitial(-1,window); //for displaying loading progress;
+	
+	//count total data for the vertices, uvs and also the normal size
 	GLuint totalSize[3] = { 0,0,0 };
 	GLuint offset[3] = { 0,0,0 };
+	//Parts total is all body parts+extra parts
 	for (int i = 0; i < PARTSTOTAL; i++) {
-		totalSize[0] += vertices_size[i] * sizeof(vec3);
-		totalSize[1] += uvs_size[i] * sizeof(vec2);
-		totalSize[2] += normals_size[i] * sizeof(vec3);
+		totalSize[0] += vertices_size[i] * sizeof(glm::vec3);
+		totalSize[1] += uvs_size[i] * sizeof(glm::vec2);
+		totalSize[2] += normals_size[i] * sizeof(glm::vec3);
 	}
-	//cout << "s1\n";
+	//add also the background
 	if (useBackground) {
-		totalSize[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
-		totalSize[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
-		totalSize[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
+		totalSize[0] += vertices_size[PARTSTOTAL] * sizeof(glm::vec3);
+		totalSize[1] += uvs_size[PARTSTOTAL] * sizeof(glm::vec2);
+		totalSize[2] += normals_size[PARTSTOTAL] * sizeof(glm::vec3);
 	}
-	//cout << "s2\n";
-	//generate vbo
+	//generate 3 vbo for the vertices, uv and  also the normal
 	glGenBuffers(1, &VBO);
 	glGenBuffers(1, &uVBO);
 	glGenBuffers(1, &nVBO);
-	//bind vbo ,�Ĥ@��bind�]�P���� create vbo 
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);//VBO��target�OGL_ARRAY_BUFFER
+	
+	//allocate space for the three VBOs. Since the data aren't changed often, use GL_STATIC_DRAW
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
 	glBufferData(GL_ARRAY_BUFFER, totalSize[0], NULL, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, uVBO);//VBO��target�OGL_ARRAY_BUFFER
+	glBindBuffer(GL_ARRAY_BUFFER, uVBO);
 	glBufferData(GL_ARRAY_BUFFER, totalSize[1], NULL, GL_STATIC_DRAW);
-
-	glBindBuffer(GL_ARRAY_BUFFER, nVBO);//VBO��target�OGL_ARRAY_BUFFER
+	glBindBuffer(GL_ARRAY_BUFFER, nVBO);
 	glBufferData(GL_ARRAY_BUFFER, totalSize[2], NULL, GL_STATIC_DRAW);
-	//cout << "s3\n";
-	int rep = PARTSTOTAL; 
-	//cout << "s4\n";
-	for (int i = 0; i < rep; i++) {
+	
+	for (int i = 0; i < PARTSTOTAL; i++) {
+		//copy individual VBO vertices into the universal VBO
 		glBindBuffer(GL_COPY_WRITE_BUFFER, VBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, VBOs[i]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[i] * sizeof(vec3));
-		offset[0] += vertices_size[i] * sizeof(vec3);
-		glInvalidateBufferData(VBOs[i]);//free vbo
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[i] * sizeof(glm::vec3));
+		offset[0] += vertices_size[i] * sizeof(glm::vec3);
+		glInvalidateBufferData(VBOs[i]);
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-
+		//copy individual VBO uv into the universal VBO
 		glBindBuffer(GL_COPY_WRITE_BUFFER, uVBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, uVBOs[i]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[1], uvs_size[i] * sizeof(vec2));
-		offset[1] += uvs_size[i] * sizeof(vec2);
-		glInvalidateBufferData(uVBOs[i]);//free vbo
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[1], uvs_size[i] * sizeof(glm::vec2));
+		offset[1] += uvs_size[i] * sizeof(glm::vec2);
+		glInvalidateBufferData(uVBOs[i]);
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-
+		//copy individual VBO normals into the universal VBO
 		glBindBuffer(GL_COPY_WRITE_BUFFER, nVBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, nVBOs[i]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[2], normals_size[i] * sizeof(vec3));
-		offset[2] += normals_size[i] * sizeof(vec3);
-		glInvalidateBufferData(uVBOs[i]);//free vbo
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[2], normals_size[i] * sizeof(glm::vec3));
+		offset[2] += normals_size[i] * sizeof(glm::vec3);
+		glInvalidateBufferData(nVBOs[i]);
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 	}
 	if (useBackground) {
+		//do the same for background, but indices must be  PARTSTOTAL, == number of the whole parts+extra parts
 		glBindBuffer(GL_COPY_WRITE_BUFFER, VBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, VBOs[PARTSTOTAL]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[PARTSTOTAL] * sizeof(vec3));
-		offset[0] += vertices_size[PARTSTOTAL] * sizeof(vec3);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[0], vertices_size[PARTSTOTAL] * sizeof(glm::vec3));
+		offset[0] += vertices_size[PARTSTOTAL] * sizeof(glm::vec3);
 		glInvalidateBufferData(VBOs[PARTSTOTAL]);//free vbo
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 
 		glBindBuffer(GL_COPY_WRITE_BUFFER, uVBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, uVBOs[PARTSTOTAL]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[1], uvs_size[PARTSTOTAL] * sizeof(vec2));
-		offset[1] += uvs_size[PARTSTOTAL] * sizeof(vec2);
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[1], uvs_size[PARTSTOTAL] * sizeof(glm::vec2));
+		offset[1] += uvs_size[PARTSTOTAL] * sizeof(glm::vec2);
 		glInvalidateBufferData(uVBOs[PARTSTOTAL]);//free vbo
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 
 		glBindBuffer(GL_COPY_WRITE_BUFFER, nVBO);
 		glBindBuffer(GL_COPY_READ_BUFFER, nVBOs[PARTSTOTAL]);
-		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[2], normals_size[PARTSTOTAL] * sizeof(vec3));
-		offset[2] += normals_size[PARTSTOTAL] * sizeof(vec3);
-		glInvalidateBufferData(uVBOs[PARTSTOTAL]);//free vbo
+		glCopyBufferSubData(GL_COPY_READ_BUFFER, GL_COPY_WRITE_BUFFER, 0, offset[2], normals_size[PARTSTOTAL] * sizeof(glm::vec3));
+		offset[2] += normals_size[PARTSTOTAL] * sizeof(glm::vec3);
+		glInvalidateBufferData(nVBOs[PARTSTOTAL]);//free vbo
 		glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
 	}
 
 	glBindBuffer(GL_COPY_WRITE_BUFFER, 0);
-	//cout << "s5\n";
 }
 
 
 void myUpdateModel() {
-	//reset state, translate to initial place
+	//reset state, glm::translate to initial place
 	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = mat4(1.0f);
+		Models[i] = glm::mat4(1.0f);
 	}
-
+	//Hierarchy transform
+	//based on the world coordinate, the rotation axis is X-Y-Z axis, or Z-Y-X axis by the object coordinate
 	//Body
-	Models[CROTCH] = translate(Models[CROTCH], vec3(0, robotShiftUp, 0));
-	Models[CROTCH] = translate(Models[CROTCH], vec3(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2]));
-	Models[CROTCH] = translate(Models[CROTCH], vec3(initialOffset[CROTCH][0], initialOffset[CROTCH][1], initialOffset[CROTCH][2]));
-	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][2], vec3(0, 0, 1));
-	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][1], vec3(0, 1, 0));
-	Models[CROTCH] = rotate(Models[CROTCH], rotatePart[CROTCH][0], vec3(1, 0, 0));
+	Models[CROTCH] = glm::translate(Models[CROTCH], glm::vec3(0, robotShiftUp, 0));
+	Models[CROTCH] = glm::translate(Models[CROTCH], glm::vec3(translatePart[CROTCH][0], translatePart[CROTCH][1], translatePart[CROTCH][2]));
+	Models[CROTCH] = glm::translate(Models[CROTCH], glm::vec3(initialOffset[CROTCH][0], initialOffset[CROTCH][1], initialOffset[CROTCH][2]));
+	Models[CROTCH] = glm::rotate(Models[CROTCH], rotatePart[CROTCH][2], glm::vec3(0, 0, 1));
+	Models[CROTCH] = glm::rotate(Models[CROTCH], rotatePart[CROTCH][1], glm::vec3(0, 1, 0));
+	Models[CROTCH] = glm::rotate(Models[CROTCH], rotatePart[CROTCH][0], glm::vec3(1, 0, 0));
 		//Abs
-		Models[ABS] = translate(Models[CROTCH], vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
-		Models[ABS] = translate(Models[ABS], vec3(initialOffset[ABS][0], initialOffset[ABS][1], initialOffset[ABS][2]));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][2], vec3(0, 0, 1));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][1], vec3(0, 1, 0));
-		Models[ABS] = rotate(Models[ABS], rotatePart[ABS][0], vec3(1, 0, 0));
+		Models[ABS] = glm::translate(Models[CROTCH], glm::vec3(translatePart[ABS][0], translatePart[ABS][1], translatePart[ABS][2]));
+		Models[ABS] = glm::translate(Models[ABS], glm::vec3(initialOffset[ABS][0], initialOffset[ABS][1], initialOffset[ABS][2]));
+		Models[ABS] = glm::rotate(Models[ABS], rotatePart[ABS][2], glm::vec3(0, 0, 1));
+		Models[ABS] = glm::rotate(Models[ABS], rotatePart[ABS][1], glm::vec3(0, 1, 0));
+		Models[ABS] = glm::rotate(Models[ABS], rotatePart[ABS][0], glm::vec3(1, 0, 0));
 			//Upper Body
-			Models[UPPER_BODY] = translate(Models[ABS], vec3(translatePart[UPPER_BODY][0], translatePart[UPPER_BODY][1], translatePart[UPPER_BODY][2]));
-			Models[UPPER_BODY] = translate(Models[UPPER_BODY], vec3(initialOffset[UPPER_BODY][0], initialOffset[UPPER_BODY][1], initialOffset[UPPER_BODY][2]));
-			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][2], vec3(0, 0, 1));
-			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][1], vec3(0, 1, 0));
-			Models[UPPER_BODY] = rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][0], vec3(1, 0, 0));
+			Models[UPPER_BODY] = glm::translate(Models[ABS], glm::vec3(translatePart[UPPER_BODY][0], translatePart[UPPER_BODY][1], translatePart[UPPER_BODY][2]));
+			Models[UPPER_BODY] = glm::translate(Models[UPPER_BODY], glm::vec3(initialOffset[UPPER_BODY][0], initialOffset[UPPER_BODY][1], initialOffset[UPPER_BODY][2]));
+			Models[UPPER_BODY] = glm::rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][2], glm::vec3(0, 0, 1));
+			Models[UPPER_BODY] = glm::rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][1], glm::vec3(0, 1, 0));
+			Models[UPPER_BODY] = glm::rotate(Models[UPPER_BODY], rotatePart[UPPER_BODY][0], glm::vec3(1, 0, 0));
 				//Neck
-				Models[NECK] = translate(Models[UPPER_BODY], vec3(translatePart[NECK][0], translatePart[NECK][1], translatePart[NECK][2]));
-				Models[NECK] = translate(Models[NECK], vec3(initialOffset[NECK][0], initialOffset[NECK][1], initialOffset[NECK][2]));
-				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][2], vec3(0, 0, 1));
-				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][1], vec3(0, 1, 0));
-				Models[NECK] = rotate(Models[NECK], rotatePart[NECK][0], vec3(1, 0, 0));
+				Models[NECK] = glm::translate(Models[UPPER_BODY], glm::vec3(translatePart[NECK][0], translatePart[NECK][1], translatePart[NECK][2]));
+				Models[NECK] = glm::translate(Models[NECK], glm::vec3(initialOffset[NECK][0], initialOffset[NECK][1], initialOffset[NECK][2]));
+				Models[NECK] = glm::rotate(Models[NECK], rotatePart[NECK][2], glm::vec3(0, 0, 1));
+				Models[NECK] = glm::rotate(Models[NECK], rotatePart[NECK][1], glm::vec3(0, 1, 0));
+				Models[NECK] = glm::rotate(Models[NECK], rotatePart[NECK][0], glm::vec3(1, 0, 0));
 					//Head
-					Models[HEAD] = translate(Models[NECK], vec3(translatePart[HEAD][0], translatePart[HEAD][1], translatePart[HEAD][2]));
-					Models[HEAD] = translate(Models[HEAD], vec3(initialOffset[HEAD][0], initialOffset[HEAD][1], initialOffset[HEAD][2]));
-					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][2], vec3(0, 0, 1));
-					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][1], vec3(0, 1, 0));
-					Models[HEAD] = rotate(Models[HEAD], rotatePart[HEAD][0], vec3(1, 0, 0));
+					Models[HEAD] = glm::translate(Models[NECK], glm::vec3(translatePart[HEAD][0], translatePart[HEAD][1], translatePart[HEAD][2]));
+					Models[HEAD] = glm::translate(Models[HEAD], glm::vec3(initialOffset[HEAD][0], initialOffset[HEAD][1], initialOffset[HEAD][2]));
+					Models[HEAD] = glm::rotate(Models[HEAD], rotatePart[HEAD][2], glm::vec3(0, 0, 1));
+					Models[HEAD] = glm::rotate(Models[HEAD], rotatePart[HEAD][1], glm::vec3(0, 1, 0));
+					Models[HEAD] = glm::rotate(Models[HEAD], rotatePart[HEAD][0], glm::vec3(1, 0, 0));
 
 				//Right_Upper_arm
-				Models[RIGHT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
-				Models[RIGHT_UPPER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(initialOffset[RIGHT_UPPER_ARM][0], initialOffset[RIGHT_UPPER_ARM][1], initialOffset[RIGHT_UPPER_ARM][2]));
-				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][2], vec3(0, 0, 1));
-				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], vec3(0, 1, 0));
-				Models[RIGHT_UPPER_ARM] = rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], vec3(1, 0, 0));
+				Models[RIGHT_UPPER_ARM] = glm::translate(Models[UPPER_BODY], glm::vec3(translatePart[RIGHT_UPPER_ARM][0], translatePart[RIGHT_UPPER_ARM][1], translatePart[RIGHT_UPPER_ARM][2]));
+				Models[RIGHT_UPPER_ARM] = glm::translate(Models[RIGHT_UPPER_ARM], glm::vec3(initialOffset[RIGHT_UPPER_ARM][0], initialOffset[RIGHT_UPPER_ARM][1], initialOffset[RIGHT_UPPER_ARM][2]));
+				Models[RIGHT_UPPER_ARM] = glm::rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][2], glm::vec3(0, 0, 1));
+				Models[RIGHT_UPPER_ARM] = glm::rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][1], glm::vec3(0, 1, 0));
+				Models[RIGHT_UPPER_ARM] = glm::rotate(Models[RIGHT_UPPER_ARM], rotatePart[RIGHT_UPPER_ARM][0], glm::vec3(1, 0, 0));
 					//Right_Lower_arm
-					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_UPPER_ARM], vec3(translatePart[RIGHT_LOWER_ARM][0], translatePart[RIGHT_LOWER_ARM][1], translatePart[RIGHT_LOWER_ARM][2]));
-					Models[RIGHT_LOWER_ARM] = translate(Models[RIGHT_LOWER_ARM], vec3(initialOffset[RIGHT_LOWER_ARM][0], initialOffset[RIGHT_LOWER_ARM][1], initialOffset[RIGHT_LOWER_ARM][2]));
-					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][2], vec3(0, 0, 1));
-					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], vec3(0, 1, 0));
-					Models[RIGHT_LOWER_ARM] = rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], vec3(1, 0, 0));
+					Models[RIGHT_LOWER_ARM] = glm::translate(Models[RIGHT_UPPER_ARM], glm::vec3(translatePart[RIGHT_LOWER_ARM][0], translatePart[RIGHT_LOWER_ARM][1], translatePart[RIGHT_LOWER_ARM][2]));
+					Models[RIGHT_LOWER_ARM] = glm::translate(Models[RIGHT_LOWER_ARM], glm::vec3(initialOffset[RIGHT_LOWER_ARM][0], initialOffset[RIGHT_LOWER_ARM][1], initialOffset[RIGHT_LOWER_ARM][2]));
+					Models[RIGHT_LOWER_ARM] = glm::rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][2], glm::vec3(0, 0, 1));
+					Models[RIGHT_LOWER_ARM] = glm::rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][1], glm::vec3(0, 1, 0));
+					Models[RIGHT_LOWER_ARM] = glm::rotate(Models[RIGHT_LOWER_ARM], rotatePart[RIGHT_LOWER_ARM][0], glm::vec3(1, 0, 0));
 						//Right_Palm
-						Models[RIGHT_PALM] = translate(Models[RIGHT_LOWER_ARM], vec3(translatePart[RIGHT_PALM][0], translatePart[RIGHT_PALM][1], translatePart[RIGHT_PALM][2]));
-						Models[RIGHT_PALM] = translate(Models[RIGHT_PALM], vec3(initialOffset[RIGHT_PALM][0], initialOffset[RIGHT_PALM][1], initialOffset[RIGHT_PALM][2]));
-						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][2], vec3(0, 0, 1));
-						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][1], vec3(0, 1, 0));
-						Models[RIGHT_PALM] = rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][0], vec3(1, 0, 0));
+						Models[RIGHT_PALM] = glm::translate(Models[RIGHT_LOWER_ARM], glm::vec3(translatePart[RIGHT_PALM][0], translatePart[RIGHT_PALM][1], translatePart[RIGHT_PALM][2]));
+						Models[RIGHT_PALM] = glm::translate(Models[RIGHT_PALM], glm::vec3(initialOffset[RIGHT_PALM][0], initialOffset[RIGHT_PALM][1], initialOffset[RIGHT_PALM][2]));
+						Models[RIGHT_PALM] = glm::rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][2], glm::vec3(0, 0, 1));
+						Models[RIGHT_PALM] = glm::rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][1], glm::vec3(0, 1, 0));
+						Models[RIGHT_PALM] = glm::rotate(Models[RIGHT_PALM], rotatePart[RIGHT_PALM][0], glm::vec3(1, 0, 0));
 				//LEFT_Upper_arm
-				Models[LEFT_UPPER_ARM] = translate(Models[UPPER_BODY], vec3(translatePart[LEFT_UPPER_ARM][0], translatePart[LEFT_UPPER_ARM][1], translatePart[LEFT_UPPER_ARM][2]));
-				Models[LEFT_UPPER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(initialOffset[LEFT_UPPER_ARM][0], initialOffset[LEFT_UPPER_ARM][1], initialOffset[LEFT_UPPER_ARM][2]));
-				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][2], vec3(0, 0, 1));
-				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][1], vec3(0, 1, 0));
-				Models[LEFT_UPPER_ARM] = rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][0], vec3(1, 0, 0));
+				Models[LEFT_UPPER_ARM] = glm::translate(Models[UPPER_BODY], glm::vec3(translatePart[LEFT_UPPER_ARM][0], translatePart[LEFT_UPPER_ARM][1], translatePart[LEFT_UPPER_ARM][2]));
+				Models[LEFT_UPPER_ARM] = glm::translate(Models[LEFT_UPPER_ARM], glm::vec3(initialOffset[LEFT_UPPER_ARM][0], initialOffset[LEFT_UPPER_ARM][1], initialOffset[LEFT_UPPER_ARM][2]));
+				Models[LEFT_UPPER_ARM] = glm::rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][2], glm::vec3(0, 0, 1));
+				Models[LEFT_UPPER_ARM] = glm::rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][1], glm::vec3(0, 1, 0));
+				Models[LEFT_UPPER_ARM] = glm::rotate(Models[LEFT_UPPER_ARM], rotatePart[LEFT_UPPER_ARM][0], glm::vec3(1, 0, 0));
 					//LEFT_Lower_arm
-					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_UPPER_ARM], vec3(translatePart[LEFT_LOWER_ARM][0], translatePart[LEFT_LOWER_ARM][1], translatePart[LEFT_LOWER_ARM][2]));
-					Models[LEFT_LOWER_ARM] = translate(Models[LEFT_LOWER_ARM], vec3(initialOffset[LEFT_LOWER_ARM][0], initialOffset[LEFT_LOWER_ARM][1], initialOffset[LEFT_LOWER_ARM][2]));
-					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][2], vec3(0, 0, 1));
-					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], vec3(0, 1, 0));
-					Models[LEFT_LOWER_ARM] = rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], vec3(1, 0, 0));
+					Models[LEFT_LOWER_ARM] = glm::translate(Models[LEFT_UPPER_ARM], glm::vec3(translatePart[LEFT_LOWER_ARM][0], translatePart[LEFT_LOWER_ARM][1], translatePart[LEFT_LOWER_ARM][2]));
+					Models[LEFT_LOWER_ARM] = glm::translate(Models[LEFT_LOWER_ARM], glm::vec3(initialOffset[LEFT_LOWER_ARM][0], initialOffset[LEFT_LOWER_ARM][1], initialOffset[LEFT_LOWER_ARM][2]));
+					Models[LEFT_LOWER_ARM] = glm::rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][2], glm::vec3(0, 0, 1));
+					Models[LEFT_LOWER_ARM] = glm::rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][1], glm::vec3(0, 1, 0));
+					Models[LEFT_LOWER_ARM] = glm::rotate(Models[LEFT_LOWER_ARM], rotatePart[LEFT_LOWER_ARM][0], glm::vec3(1, 0, 0));
 						//LEFT_Palm
-						Models[LEFT_PALM] = translate(Models[LEFT_LOWER_ARM], vec3(translatePart[LEFT_PALM][0], translatePart[LEFT_PALM][1], translatePart[LEFT_PALM][2]));
-						Models[LEFT_PALM] = translate(Models[LEFT_PALM], vec3(initialOffset[LEFT_PALM][0], initialOffset[LEFT_PALM][1], initialOffset[LEFT_PALM][2]));
-						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][2], vec3(0, 0, 1));
-						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][1], vec3(0, 1, 0));
-						Models[LEFT_PALM] = rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][0], vec3(1, 0, 0));
+						Models[LEFT_PALM] = glm::translate(Models[LEFT_LOWER_ARM], glm::vec3(translatePart[LEFT_PALM][0], translatePart[LEFT_PALM][1], translatePart[LEFT_PALM][2]));
+						Models[LEFT_PALM] = glm::translate(Models[LEFT_PALM], glm::vec3(initialOffset[LEFT_PALM][0], initialOffset[LEFT_PALM][1], initialOffset[LEFT_PALM][2]));
+						Models[LEFT_PALM] = glm::rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][2], glm::vec3(0, 0, 1));
+						Models[LEFT_PALM] = glm::rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][1], glm::vec3(0, 1, 0));
+						Models[LEFT_PALM] = glm::rotate(Models[LEFT_PALM], rotatePart[LEFT_PALM][0], glm::vec3(1, 0, 0));
 
 		//Left_Upper_thigh
-		Models[LEFT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
-		Models[LEFT_UPPER_THIGH] = translate(Models[LEFT_UPPER_THIGH], vec3(initialOffset[LEFT_UPPER_THIGH][0], initialOffset[LEFT_UPPER_THIGH][1], initialOffset[LEFT_UPPER_THIGH][2]));
-		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][2], vec3(0, 0, 1));
-		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][1], vec3(0, 1, 0));
-		Models[LEFT_UPPER_THIGH] = rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][0], vec3(1, 0, 0));
+		Models[LEFT_UPPER_THIGH] = glm::translate(Models[CROTCH], glm::vec3(translatePart[LEFT_UPPER_THIGH][0], translatePart[LEFT_UPPER_THIGH][1], translatePart[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = glm::translate(Models[LEFT_UPPER_THIGH], glm::vec3(initialOffset[LEFT_UPPER_THIGH][0], initialOffset[LEFT_UPPER_THIGH][1], initialOffset[LEFT_UPPER_THIGH][2]));
+		Models[LEFT_UPPER_THIGH] = glm::rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][2], glm::vec3(0, 0, 1));
+		Models[LEFT_UPPER_THIGH] = glm::rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][1], glm::vec3(0, 1, 0));
+		Models[LEFT_UPPER_THIGH] = glm::rotate(Models[LEFT_UPPER_THIGH], rotatePart[LEFT_UPPER_THIGH][0], glm::vec3(1, 0, 0));
 			//LEFT_lower_thigh
-			Models[LEFT_LOWER_THIGH] = translate(Models[LEFT_UPPER_THIGH], vec3(translatePart[LEFT_LOWER_THIGH][0], translatePart[LEFT_LOWER_THIGH][1], translatePart[LEFT_LOWER_THIGH][2]));
-			Models[LEFT_LOWER_THIGH] = translate(Models[LEFT_LOWER_THIGH], vec3(initialOffset[LEFT_LOWER_THIGH][0], initialOffset[LEFT_LOWER_THIGH][1], initialOffset[LEFT_LOWER_THIGH][2]));
-			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][2], vec3(0, 0, 1));
-			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][1], vec3(0, 1, 0));
-			Models[LEFT_LOWER_THIGH] = rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][0], vec3(1, 0, 0));
+			Models[LEFT_LOWER_THIGH] = glm::translate(Models[LEFT_UPPER_THIGH], glm::vec3(translatePart[LEFT_LOWER_THIGH][0], translatePart[LEFT_LOWER_THIGH][1], translatePart[LEFT_LOWER_THIGH][2]));
+			Models[LEFT_LOWER_THIGH] = glm::translate(Models[LEFT_LOWER_THIGH], glm::vec3(initialOffset[LEFT_LOWER_THIGH][0], initialOffset[LEFT_LOWER_THIGH][1], initialOffset[LEFT_LOWER_THIGH][2]));
+			Models[LEFT_LOWER_THIGH] = glm::rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][2], glm::vec3(0, 0, 1));
+			Models[LEFT_LOWER_THIGH] = glm::rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][1], glm::vec3(0, 1, 0));
+			Models[LEFT_LOWER_THIGH] = glm::rotate(Models[LEFT_LOWER_THIGH], rotatePart[LEFT_LOWER_THIGH][0], glm::vec3(1, 0, 0));
 				//LEFT_foot
-				Models[LEFT_FOOT] = translate(Models[LEFT_LOWER_THIGH], vec3(translatePart[LEFT_FOOT][0], translatePart[LEFT_FOOT][1], translatePart[LEFT_FOOT][2]));
-				Models[LEFT_FOOT] = translate(Models[LEFT_FOOT], vec3(initialOffset[LEFT_FOOT][0], initialOffset[LEFT_FOOT][1], initialOffset[LEFT_FOOT][2]));
-				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][2], vec3(0, 0, 1));
-				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][1], vec3(0, 1, 0));
-				Models[LEFT_FOOT] = rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][0], vec3(1, 0, 0));
+				Models[LEFT_FOOT] = glm::translate(Models[LEFT_LOWER_THIGH], glm::vec3(translatePart[LEFT_FOOT][0], translatePart[LEFT_FOOT][1], translatePart[LEFT_FOOT][2]));
+				Models[LEFT_FOOT] = glm::translate(Models[LEFT_FOOT], glm::vec3(initialOffset[LEFT_FOOT][0], initialOffset[LEFT_FOOT][1], initialOffset[LEFT_FOOT][2]));
+				Models[LEFT_FOOT] = glm::rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][2], glm::vec3(0, 0, 1));
+				Models[LEFT_FOOT] = glm::rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][1], glm::vec3(0, 1, 0));
+				Models[LEFT_FOOT] = glm::rotate(Models[LEFT_FOOT], rotatePart[LEFT_FOOT][0], glm::vec3(1, 0, 0));
 					//LEFT_foot_toes
-					Models[LEFT_FOOT_TOES] = translate(Models[LEFT_FOOT], vec3(translatePart[LEFT_FOOT_TOES][0], translatePart[LEFT_FOOT_TOES][1], translatePart[LEFT_FOOT_TOES][2]));
-					Models[LEFT_FOOT_TOES] = translate(Models[LEFT_FOOT_TOES], vec3(initialOffset[LEFT_FOOT_TOES][0], initialOffset[LEFT_FOOT_TOES][1], initialOffset[LEFT_FOOT_TOES][2]));
-					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][2], vec3(0, 0, 1));
-					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][1], vec3(0, 1, 0));
-					Models[LEFT_FOOT_TOES] = rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][0], vec3(1, 0, 0));
+					Models[LEFT_FOOT_TOES] = glm::translate(Models[LEFT_FOOT], glm::vec3(translatePart[LEFT_FOOT_TOES][0], translatePart[LEFT_FOOT_TOES][1], translatePart[LEFT_FOOT_TOES][2]));
+					Models[LEFT_FOOT_TOES] = glm::translate(Models[LEFT_FOOT_TOES], glm::vec3(initialOffset[LEFT_FOOT_TOES][0], initialOffset[LEFT_FOOT_TOES][1], initialOffset[LEFT_FOOT_TOES][2]));
+					Models[LEFT_FOOT_TOES] = glm::rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][2], glm::vec3(0, 0, 1));
+					Models[LEFT_FOOT_TOES] = glm::rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][1], glm::vec3(0, 1, 0));
+					Models[LEFT_FOOT_TOES] = glm::rotate(Models[LEFT_FOOT_TOES], rotatePart[LEFT_FOOT_TOES][0], glm::vec3(1, 0, 0));
 		//right_upper_thigh
-		Models[RIGHT_UPPER_THIGH] = translate(Models[CROTCH], vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
-		Models[RIGHT_UPPER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(initialOffset[RIGHT_UPPER_THIGH][0], initialOffset[RIGHT_UPPER_THIGH][1], initialOffset[RIGHT_UPPER_THIGH][2]));
-		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], vec3(0, 0, 1));
-		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], vec3(0, 1, 0));
-		Models[RIGHT_UPPER_THIGH] = rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], vec3(1, 0, 0));
+		Models[RIGHT_UPPER_THIGH] = glm::translate(Models[CROTCH], glm::vec3(translatePart[RIGHT_UPPER_THIGH][0], translatePart[RIGHT_UPPER_THIGH][1], translatePart[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = glm::translate(Models[RIGHT_UPPER_THIGH], glm::vec3(initialOffset[RIGHT_UPPER_THIGH][0], initialOffset[RIGHT_UPPER_THIGH][1], initialOffset[RIGHT_UPPER_THIGH][2]));
+		Models[RIGHT_UPPER_THIGH] = glm::rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][2], glm::vec3(0, 0, 1));
+		Models[RIGHT_UPPER_THIGH] = glm::rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][1], glm::vec3(0, 1, 0));
+		Models[RIGHT_UPPER_THIGH] = glm::rotate(Models[RIGHT_UPPER_THIGH], rotatePart[RIGHT_UPPER_THIGH][0], glm::vec3(1, 0, 0));
 			//Right_lower_thigh
-			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_UPPER_THIGH], vec3(translatePart[RIGHT_LOWER_THIGH][0], translatePart[RIGHT_LOWER_THIGH][1], translatePart[RIGHT_LOWER_THIGH][2]));
-			Models[RIGHT_LOWER_THIGH] = translate(Models[RIGHT_LOWER_THIGH], vec3(initialOffset[RIGHT_LOWER_THIGH][0], initialOffset[RIGHT_LOWER_THIGH][1], initialOffset[RIGHT_LOWER_THIGH][2]));
-			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][2], vec3(0, 0, 1));
-			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], vec3(0, 1, 0));
-			Models[RIGHT_LOWER_THIGH] = rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], vec3(1, 0, 0));
+			Models[RIGHT_LOWER_THIGH] = glm::translate(Models[RIGHT_UPPER_THIGH], glm::vec3(translatePart[RIGHT_LOWER_THIGH][0], translatePart[RIGHT_LOWER_THIGH][1], translatePart[RIGHT_LOWER_THIGH][2]));
+			Models[RIGHT_LOWER_THIGH] = glm::translate(Models[RIGHT_LOWER_THIGH], glm::vec3(initialOffset[RIGHT_LOWER_THIGH][0], initialOffset[RIGHT_LOWER_THIGH][1], initialOffset[RIGHT_LOWER_THIGH][2]));
+			Models[RIGHT_LOWER_THIGH] = glm::rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][2], glm::vec3(0, 0, 1));
+			Models[RIGHT_LOWER_THIGH] = glm::rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][1], glm::vec3(0, 1, 0));
+			Models[RIGHT_LOWER_THIGH] = glm::rotate(Models[RIGHT_LOWER_THIGH], rotatePart[RIGHT_LOWER_THIGH][0], glm::vec3(1, 0, 0));
 				//Right_foot
-				Models[RIGHT_FOOT] = translate(Models[RIGHT_LOWER_THIGH], vec3(translatePart[RIGHT_FOOT][0], translatePart[RIGHT_FOOT][1], translatePart[RIGHT_FOOT][2]));
-				Models[RIGHT_FOOT] = translate(Models[RIGHT_FOOT], vec3(initialOffset[RIGHT_FOOT][0], initialOffset[RIGHT_FOOT][1], initialOffset[RIGHT_FOOT][2]));
-				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][2], vec3(0, 0, 1));
-				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], vec3(0, 1, 0));
-				Models[RIGHT_FOOT] = rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], vec3(1, 0, 0));
+				Models[RIGHT_FOOT] = glm::translate(Models[RIGHT_LOWER_THIGH], glm::vec3(translatePart[RIGHT_FOOT][0], translatePart[RIGHT_FOOT][1], translatePart[RIGHT_FOOT][2]));
+				Models[RIGHT_FOOT] = glm::translate(Models[RIGHT_FOOT], glm::vec3(initialOffset[RIGHT_FOOT][0], initialOffset[RIGHT_FOOT][1], initialOffset[RIGHT_FOOT][2]));
+				Models[RIGHT_FOOT] = glm::rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][2], glm::vec3(0, 0, 1));
+				Models[RIGHT_FOOT] = glm::rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][1], glm::vec3(0, 1, 0));
+				Models[RIGHT_FOOT] = glm::rotate(Models[RIGHT_FOOT], rotatePart[RIGHT_FOOT][0], glm::vec3(1, 0, 0));
 					//Right_foot_toes
-					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT], vec3(translatePart[RIGHT_FOOT_TOES][0], translatePart[RIGHT_FOOT_TOES][1], translatePart[RIGHT_FOOT_TOES][2]));
-					Models[RIGHT_FOOT_TOES] = translate(Models[RIGHT_FOOT_TOES], vec3(initialOffset[RIGHT_FOOT_TOES][0], initialOffset[RIGHT_FOOT_TOES][1], initialOffset[RIGHT_FOOT_TOES][2]));
-					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], vec3(0, 0, 1));
-					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], vec3(0, 1, 0));
-					Models[RIGHT_FOOT_TOES] = rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], vec3(1, 0, 0));
+					Models[RIGHT_FOOT_TOES] = glm::translate(Models[RIGHT_FOOT], glm::vec3(translatePart[RIGHT_FOOT_TOES][0], translatePart[RIGHT_FOOT_TOES][1], translatePart[RIGHT_FOOT_TOES][2]));
+					Models[RIGHT_FOOT_TOES] = glm::translate(Models[RIGHT_FOOT_TOES], glm::vec3(initialOffset[RIGHT_FOOT_TOES][0], initialOffset[RIGHT_FOOT_TOES][1], initialOffset[RIGHT_FOOT_TOES][2]));
+					Models[RIGHT_FOOT_TOES] = glm::rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][2], glm::vec3(0, 0, 1));
+					Models[RIGHT_FOOT_TOES] = glm::rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][1], glm::vec3(0, 1, 0));
+					Models[RIGHT_FOOT_TOES] = glm::rotate(Models[RIGHT_FOOT_TOES], rotatePart[RIGHT_FOOT_TOES][0], glm::vec3(1, 0, 0));
 
-	//placing to initial codes
+	//Our model is reversed in y axis, so we need to turn it once again for all coordinates to make it correct
 	for (int i = 0; i < PARTSNUM; i++) {
-		Models[i] = rotate(Models[i], rotateCentral, vec3(0, 1, 0));
+		Models[i] = glm::rotate(Models[i], 180.f, glm::vec3(0, 1, 0));
 	}
 }
 
 void load2Buffer(string obj, int i) {
-	std::vector<vec3> vertices;
-	std::vector<vec2> uvs;
-	std::vector<vec3> normals; // Won't be used at the moment.
+	std::vector<glm::vec3> vertices;
+	std::vector<glm::vec2> uvs;
+	std::vector<glm::vec3> normals;
 	std::vector<unsigned int> materialIndices;
 
 	const char* c = obj.c_str();
@@ -1157,135 +1730,191 @@ void load2Buffer(string obj, int i) {
 	cout << "load finished!\n";
 	if (!res) printf("load failed\n");
 
-	//glUseProgram(program);
-
 	glGenBuffers(1, &VBOs[i]);
 	glBindBuffer(GL_ARRAY_BUFFER, VBOs[i]);
-	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec3), &vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
 	vertices_size[i] = vertices.size();
-
-	//(buffer type,data�_�l��m,data size,data first ptr)
-	//vertices_size[i] = glm_model->numtriangles;
-
-	//printf("vertices:%d\n",vertices_size[);
 
 	glGenBuffers(1, &uVBOs[i]);
 	glBindBuffer(GL_ARRAY_BUFFER, uVBOs[i]);
-	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(vec2), &uvs[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, uvs.size() * sizeof(glm::vec2), &uvs[0], GL_STATIC_DRAW);
 	uvs_size[i] = uvs.size();
 
 	glGenBuffers(1, &nVBOs[i]);
 	glBindBuffer(GL_ARRAY_BUFFER, nVBOs[i]);
-	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(vec3), &normals[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
 	normals_size[i] = normals.size();
 }
 //Keyboard for GLFW
 void KeyboardGLFW(GLFWwindow* window, int key, int scancode, int action, int mods) {
 	//related to animation
-	bool notAnimationKey = (key != GLFW_KEY_W) && (key != GLFW_KEY_A) && (key != GLFW_KEY_S) && (key != GLFW_KEY_D) && (key != GLFW_KEY_SPACE);
-	if (notAnimationKey) {
-		animateMode = IDLE;
-	}
-	else if (key == GLFW_KEY_W) {
-		animateMode = WALK;
-		viewChange = true;
-		rotatePart[CROTCH][0] = 0;
-		rotatePart[CROTCH][1] = 180;
-		rotatePart[CROTCH][2] = 0;
-
-		//translatePart[CROTCH][0] += 0;
-		//translatePart[CROTCH][1] += 0;
-		translatePart[CROTCH][2] -= WALKSPEED;
+	if (key == GLFW_KEY_W) {
+		if (action == GLFW_REPEAT) {
+			wasdPressed = true;
+			direction = 0;
+			animateMode = WALK;
+		}
+		else if (action == GLFW_PRESS) {
+			wasdPressed = true;
+			direction = 0;
+			if (animateMode != WALK) {
+				if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+					fromGangnamMoonwalk = true; //disable bgm
+				}
+				modeChangeExist = true;
+				animateMode = WALK;
+			}
+		}
+		else if (action == GLFW_RELEASE) {
+			wasdPressed = false;
+		}
+		
 	}
 	else if (key == GLFW_KEY_A) {
-		animateMode = WALK;
-		viewChange = true;
-		rotatePart[CROTCH][0] = 0;
-		rotatePart[CROTCH][1] = -90;
-		rotatePart[CROTCH][2] = 0;
-
-		translatePart[CROTCH][0] -= WALKSPEED;
-		//translatePart[CROTCH][1] += 0;
-		//translatePart[CROTCH][2] += 0;
+		if (action == GLFW_REPEAT) {
+			animateMode = WALK;
+			wasdPressed = true;
+			direction = 1;
+		}
+		else if (action == GLFW_PRESS) {
+			wasdPressed = true;
+			direction = 1;
+			if (animateMode != WALK) {
+				if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+					fromGangnamMoonwalk = true; //disable bgm
+				}
+				modeChangeExist = true;
+				animateMode = WALK;
+			}
+		}
+		else if (action == GLFW_RELEASE) {
+			wasdPressed = false;
+		}
 	}
 	else if (key == GLFW_KEY_S) {
-		animateMode = WALK;
-		viewChange = true;
-		rotatePart[CROTCH][0] = 0;
-		rotatePart[CROTCH][1] = 0;
-		rotatePart[CROTCH][2] = 0;
-
-		//translatePart[CROTCH][0] += 0;
-		//translatePart[CROTCH][1] += 0;
-		translatePart[CROTCH][2] += WALKSPEED;
+		if (action == GLFW_REPEAT) {
+			animateMode = WALK;
+			direction = 2;
+			wasdPressed = true;
+		}
+		else if (action == GLFW_PRESS) {
+			wasdPressed = true;
+			direction = 2;
+			if (animateMode != WALK) {
+				if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+					fromGangnamMoonwalk = true;//disable bgm
+				}
+				modeChangeExist = true;
+				animateMode = WALK;
+			}
+		}
+		else if (action == GLFW_RELEASE) {
+			wasdPressed = false;
+		}
 	}
 	else if (key == GLFW_KEY_D) {
-		animateMode = WALK;
-		viewChange = true;
-		rotatePart[CROTCH][0] = 0;
-		rotatePart[CROTCH][1] = 90;
-		rotatePart[CROTCH][2] = 0;
-
-		translatePart[CROTCH][0] += WALKSPEED;
-		//translatePart[CROTCH][1] += 0;
-		//translatePart[CROTCH][2] += 0;
-	}
-	else if (key == GLFW_KEY_SPACE) {
-		if (animateMode == JUMPINGJACK) {
-			animateMode = IDLE;
-			resetModel();
+		if (action == GLFW_REPEAT) {
+			animateMode = WALK;
+			direction = 3;
+			wasdPressed = true;
 		}
-		else {
+		else if (action == GLFW_PRESS) {
+			wasdPressed = true;
+			direction = 3;
+			if (animateMode != WALK) {
+				if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+					fromGangnamMoonwalk = true;//disable bgm
+				}
+				modeChangeExist = true;
+				animateMode = WALK;
+			}
+		}
+		else if (action == GLFW_RELEASE) {
+			wasdPressed = false;
+		}
+	}
+	else if (key == GLFW_KEY_F && action == GLFW_PRESS) {
+		if (animateMode != SQUAT) {
+			if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+				fromGangnamMoonwalk = true;//disable bgm
+			}
+			animateMode = SQUAT;
+			modeChangeExist = true;
+		}
+	}
+	else if (key == GLFW_KEY_G && action == GLFW_PRESS) {
+		if (animateMode != JUMPINGJACK) {
+			if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+				fromGangnamMoonwalk = true;//disable bgm
+			}
 			animateMode = JUMPINGJACK;
+			modeChangeExist = true;
 		}
 	}
-	//related to viewing
+	else if (key == GLFW_KEY_H && action == GLFW_PRESS) {
+		if (animateMode != GANGNAMSTYLE) {
+			animateMode = GANGNAMSTYLE;
+			modeChangeExist = true;
+		}
+	}
+	else if (key == GLFW_KEY_J && action == GLFW_PRESS) {
+		if (animateMode != MOONWALK) {
+			animateMode = MOONWALK;
+			modeChangeExist = true;
+		}
+	}
+	else if (key == GLFW_KEY_K && action == GLFW_PRESS) {
+		if (animateMode != PUSHUP) {
+			if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+				fromGangnamMoonwalk = true; //disable bgm
+			}
+			animateMode = PUSHUP;
+			modeChangeExist = true;
+		}
+	}
+	else if (key == GLFW_KEY_L && action == GLFW_PRESS) {
+		if (animateMode != SITUP) {
+			if (animateMode == GANGNAMSTYLE || animateMode == MOONWALK) {
+				fromGangnamMoonwalk = true;//disable bgm
+			}
+			animateMode = SITUP;
+			modeChangeExist = true;
+		}
+	}
+
+	//related to viewing and exit
 	switch (key) {
 	case GLFW_KEY_ESCAPE:
 		glfwSetWindowShouldClose(window, GLFW_TRUE);
 		break;
-	case GLFW_KEY_G:
-		animateMode = IDLE;
-		rotatePart[LEFT_UPPER_ARM][0] += 4;
-		break;
-	case GLFW_KEY_H:
-		animateMode = IDLE;
-		rotatePart[LEFT_UPPER_ARM][0] -= 4;
-		break;
-	case GLFW_KEY_J:
-		animateMode = IDLE;
-		rotatePart[LEFT_LOWER_ARM][0] += 4;
-		break;
-	case GLFW_KEY_K:
-		animateMode = IDLE;
-		rotatePart[LEFT_LOWER_ARM][0] -= 4;
-		break;
 	case GLFW_KEY_UP:
-		viewChange = true;
-		eyedistance -= 0.2;
-		clip(eyedistance, 5, 40);
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			viewChange = true; //update view matrix
+			eyedistance -= 0.2;
+			clip(eyedistance, 5, 40);
+		}
 		break;
 	case GLFW_KEY_DOWN:
-		viewChange = true;
-		eyedistance += 0.2;
-		clip(eyedistance, 5, 40);
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			viewChange = true; //update view matrix
+			eyedistance += 0.2;
+			clip(eyedistance, 5, 40);
+		}
 		break;
 	case GLFW_KEY_LEFT:
-		viewChange = true;
-		eyeAngley -= 10;
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			viewChange = true; //update view matrix
+			eyeAngley += 2;
+		}
 		break;
 	case GLFW_KEY_RIGHT:
-		eyeAngley += 10;
-		viewChange = true;
-		break;
-	case GLFW_KEY_0:
-		palmMode = CLENCH;
-		break;
-	case GLFW_KEY_1:
-		palmMode = OPEN;
+		if (action == GLFW_PRESS || action == GLFW_REPEAT) {
+			eyeAngley -= 2;
+			viewChange = true;//update view matrix
+		}
 		break;
 	default:
-		animateMode = IDLE;
+		break;
 	}
 }
 
@@ -1343,12 +1972,83 @@ float clampValMax(float x, float clampToMax)
 		return x;
 	}
 }
+void updateWalkTranslate() {
+	//translate based on the angle
+	viewChange = true;
+	float nowAngle = eyeAngley;
+	float radAngle = deg2rad(-nowAngle);
+	float xChange;
+	float zChange;
+	if (lastDirection == 0) {
+		//w
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 180+nowAngle;
+		rotatePart[CROTCH][2] = 0;
+		
+		zChange = -WALKSPEED * cosf(radAngle);
+		xChange = WALKSPEED * sinf(radAngle);
+	}
+	else if (lastDirection == 1) {
+		//a
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = -90+nowAngle;
+		rotatePart[CROTCH][2] = 0;
 
-float sf = 1.0f;
-float walk()
+		xChange = -WALKSPEED * cosf(radAngle);
+		zChange = -WALKSPEED * sinf(radAngle);
+	}
+	else if (lastDirection == 2) {
+		//s
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = nowAngle;
+		rotatePart[CROTCH][2] = 0;
+
+		zChange = WALKSPEED * cosf(radAngle);
+		xChange = -WALKSPEED * sinf(radAngle);
+	}
+	else if(lastDirection == 3){
+		//d
+		rotatePart[CROTCH][0] = 0;
+		rotatePart[CROTCH][1] = 90+nowAngle;
+		rotatePart[CROTCH][2] = 0;
+
+		zChange = WALKSPEED * sinf(radAngle);
+		xChange = WALKSPEED * cosf(radAngle);
+	}
+	else {
+		//nochange anything, walk in place
+		xChange = 0;
+		zChange = 0;
+	}
+	//check for map boundary
+	if (xChange < 0) {
+		if (translatePart[CROTCH][0] >= -TRANSLATEXLIMIT) {
+			translatePart[CROTCH][0] += xChange;
+		}
+	}
+	else {
+		if (translatePart[CROTCH][0] <= TRANSLATEXLIMIT) {
+			translatePart[CROTCH][0] += xChange;
+		}
+	}
+	
+	//check for map boundary
+	if (zChange < 0) {
+		if (translatePart[CROTCH][2] >= -TRANSLATEZLIMIT) {
+			translatePart[CROTCH][2] += zChange;
+		}
+	}
+	else {
+		if (translatePart[CROTCH][2] <= TRANSLATEZLIMIT) {
+			translatePart[CROTCH][2] += zChange;
+		}
+	}
+}
+
+
+void walk()
 {
 	float currentTime = glfwGetTime();
-	cout << rotatePart[RIGHT_UPPER_ARM][0] << endl;
 
 	// RIGHTLEG
 	if (r_isUp)
@@ -1527,6 +2227,7 @@ float walk()
 			l_isUp2 = false;
 			l_isUp3 = false;
 			l_isUp4 = true;
+			SoundEngine->play2D("../Assets/music/robotstep.mp3", false, false, true);
 			// system("pause");
 		}
 	}
@@ -1547,8 +2248,6 @@ float walk()
 		else if (!l_isUp2 && rotatePart[LEFT_UPPER_THIGH][0] >= -10.0f)
 		{
 			rotatePart[LEFT_LOWER_THIGH][0] += 0.3f;
-			// cout << rotatePart[RIGHT_LOWER_THIGH][0] << endl;
-			// system("pause");
 		}
 
 		if (!l_isUp3)
@@ -1591,6 +2290,7 @@ float walk()
 			l_isUp3 = false;
 			l_isUp4 = false;
 			l_is_return = true;
+			SoundEngine->play2D("../Assets/music/robotstep.mp3", false, false, true);
 		}
 	}
 
@@ -1609,240 +2309,272 @@ float walk()
 	if (rotatePart[LEFT_UPPER_ARM][0] > 0) // when move back
 	{
 		rotatePart[LEFT_LOWER_ARM][0] = clampValMax(rotatePart[LEFT_LOWER_ARM][0] + 0.8f, 0.0f);
+		rotatePart[ABS][1] = clampValMax(rotatePart[ABS][1] + 0.1f, 3.0f);
 	}
 	else
 	{
 		rotatePart[LEFT_LOWER_ARM][0] -= 0.5f;
+		rotatePart[ABS][1] = clampValMin(rotatePart[ABS][1] - 0.1f, -3.0f);
 	}
 
-	translatePart[CROTCH][1] = clampValMin(sin((currentTime - startTime)  * 2 * 3.14 / 1.5) * 0.1f, 0.0f);
-	rotatePart[ABS][1] = -sin((currentTime - startTime) * 2 * 3.14 / 3.0f) * 1.5f;
+	//translatePart[CROTCH][1] = clampValMin(sin((currentTime - startTime)  * 2 * 3.14 / 1.5) * 0.1f, 0.0f);
+	//rotatePart[ABS][1] = -sin((currentTime - startTime) * 2 * 3.14 / 3.0f) * 1.5f;
 
+	if (abs(rotatePart[RIGHT_UPPER_THIGH][0]) < 2.0) {
+		walkSafeStop = true;
+	}
+	else {
+		walkSafeStop = false;
+	}
 
-	cout << "updated\n";
-	return rotatePart[RIGHT_UPPER_THIGH][0];
+	/*if (abs(rotatePart[RIGHT_UPPER_THIGH][0]) < 3.0 && abs(rotatePart[RIGHT_UPPER_THIGH][0]) > 0.0) {
+		SoundEngine->play2D("../Assets/music/robotstep.mp3", false,false, true);
+	}*/
+
+	//return rotatePart[RIGHT_UPPER_THIGH][0];
 	
 }
 
-void jumpingJack() // NAIK TURUN BELUM*****************************************
+void jumpingJack()
 {
-	if (!isOpen)
+	if (jjCount != 5)
 	{
-		if (pause)
+		if (!isOpen)
 		{
-			Sleep(400);
-		}
-		pause = false;
-
-		
-		if (!squat1)
-		{
-			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
-			rotatePart[LEFT_LOWER_ARM][1] += 10.0f;
-
-			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
-			rotatePart[LEFT_FOOT][0] -= 3.0f;
-
-			if (rotatePart[LEFT_LOWER_ARM][1] >= 80.0f)
+			if (pause)
 			{
-				rotatePart[LEFT_LOWER_ARM][1] = 80.0f;
+				Sleep(400);
 			}
+			pause = false;
 
-			if (rotatePart[LEFT_FOOT][0] <= -20.0f)
+
+			if (!squat1)
 			{
-				rotatePart[LEFT_FOOT][0] = -20.0f;
-				
-				if (rotatePart[LEFT_LOWER_THIGH][0] >= 25.0f)
+				rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+				rotatePart[LEFT_LOWER_ARM][1] += 10.0f;
+
+				rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
+				rotatePart[LEFT_FOOT][0] -= 3.0f;
+
+				if (rotatePart[LEFT_LOWER_ARM][1] >= 80.0f)
 				{
-					rotatePart[LEFT_LOWER_THIGH][0] = 25.0f;
+					rotatePart[LEFT_LOWER_ARM][1] = 80.0f;
+				}
+				translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + 0.3, 1.0f);
+
+				if (rotatePart[LEFT_FOOT][0] <= -20.0f)
+				{
+					rotatePart[LEFT_FOOT][0] = -20.0f;
+
+					if (rotatePart[LEFT_LOWER_THIGH][0] >= 25.0f)
+					{
+						rotatePart[LEFT_LOWER_THIGH][0] = 25.0f;
+						if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
+						{
+							rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
+							squat1 = true;
+						}
+					}
+				}
+
+				rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+				rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+				rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+			}
+			else if (!squat2)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
+				rotatePart[LEFT_LOWER_ARM][0] -= 10.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+				rotatePart[LEFT_FOOT][0] += 10.0f;
+				rotatePart[LEFT_FOOT][2] -= 3.0f;
+				// rotatePart[LEFT_FOOT_TOES][0] -= 5.f;
+
+				if (rotatePart[LEFT_UPPER_ARM][2] >= 140.0f)
+				{
+					rotatePart[LEFT_UPPER_ARM][2] = 140.0f;
+				}
+
+				if (rotatePart[LEFT_LOWER_ARM][0] <= -80.0f)
+				{
+					rotatePart[LEFT_LOWER_ARM][0] = -80.0f;
+				}
+
+				if (rotatePart[LEFT_FOOT][0] >= 0)
+				{
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+				}
+
+				/*if (rotatePart[LEFT_FOOT_TOES][0] <= -35.0f)
+				{
+					rotatePart[LEFT_FOOT_TOES][0] = -35.0f;
+				}*/
+
+				if (rotatePart[LEFT_FOOT][2] <= -10.0f)
+				{
+					rotatePart[LEFT_FOOT][2] = -10.0f;
+				}
+
+				if (rotatePart[LEFT_UPPER_ARM][2] >= 120.0f)
+				{
+					rotatePart[LEFT_UPPER_ARM][2] = 120.0f;
+				}
+
+				rotatePart[LEFT_UPPER_THIGH][2] += 1.0f;
+
+				translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - 0.3, 0.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][2] >= 10.0f)
+				{
+					rotatePart[LEFT_UPPER_THIGH][2] = 10.0f;
+					if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
+					{
+						rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+						if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+						{
+							translatePart[CROTCH][1] = 0.0f;
+							rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+							isOpen = true;
+							squat1 = false;
+							squat2 = false;
+							pause = true;
+							SoundEngine->play2D("../Assets/music/robotstep.mp3", false, false, true);
+						}
+					}
+				}
+
+				rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+				rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+				rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+				rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+				rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+			}
+		}
+		else
+		{
+			if (pause)
+			{
+				Sleep(300);
+			}
+			pause = false;
+
+
+			if (!squat1)
+			{
+				rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
+				rotatePart[LEFT_LOWER_ARM][1] -= 5.0f;
+				rotatePart[LEFT_LOWER_ARM][0] += 10.0f;
+
+				rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
+
+				if (rotatePart[LEFT_LOWER_ARM][0] >= 0.0f)
+				{
+					rotatePart[LEFT_LOWER_ARM][0] = 0.0f;
+				}
+
+				if (rotatePart[LEFT_LOWER_THIGH][0] >= 15.0f)
+				{
+					rotatePart[LEFT_LOWER_THIGH][0] = 15.0f;
 					if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
 					{
 						rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
 						squat1 = true;
 					}
 				}
+
+				translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + 0.3, 1.0f);
+
+				rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+				rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+				rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
 			}
-
-			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
-			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
-			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
-			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
-			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
-			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
-		}
-		else if (!squat2)
-		{
-			rotatePart[LEFT_UPPER_ARM][2] += 10.0f;
-			rotatePart[LEFT_LOWER_ARM][0] -= 10.0f;
-			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
-			rotatePart[LEFT_FOOT][0] += 10.0f;
-			rotatePart[LEFT_FOOT][2] -= 3.0f;
-			rotatePart[LEFT_FOOT_TOES][0] -= 5.f;
-
-			if (rotatePart[LEFT_UPPER_ARM][2] >= 140.0f)
+			else if (!squat2)
 			{
-				rotatePart[LEFT_UPPER_ARM][2] = 140.0f;
-			}
+				rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
+				rotatePart[LEFT_LOWER_ARM][1] -= 10.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
+				rotatePart[LEFT_FOOT][0] += 10.0f;
+				rotatePart[LEFT_FOOT][2] += 3.0f;
+				// rotatePart[LEFT_FOOT_TOES][0] += 5.0f;
 
-			if (rotatePart[LEFT_LOWER_ARM][0] <= -80.0f)
-			{
-				rotatePart[LEFT_LOWER_ARM][0] = -80.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT][0] >= 50.0f)
-			{
-				rotatePart[LEFT_FOOT][0] = 50.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT_TOES][0] <= -35.0f)
-			{
-				rotatePart[LEFT_FOOT_TOES][0] = -35.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT][2] <= -10.0f)
-			{
-				rotatePart[LEFT_FOOT][2] = -10.0f;
-			}
-
-			if (rotatePart[LEFT_UPPER_ARM][2] >= 120.0f)
-			{
-				rotatePart[LEFT_UPPER_ARM][2] = 120.0f;
-			}
-
-			rotatePart[LEFT_UPPER_THIGH][2] += 1.0f;
-
-			if (rotatePart[LEFT_UPPER_THIGH][2] >= 10.0f)
-			{
-				rotatePart[LEFT_UPPER_THIGH][2] = 10.0f;
-				if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
+				if (rotatePart[LEFT_UPPER_ARM][2] <= 0.0f)
 				{
-					rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
-					if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+					rotatePart[LEFT_UPPER_ARM][2] = 0.0f;
+				}
+
+				if (rotatePart[LEFT_LOWER_ARM][1] <= 0.0f)
+				{
+					rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
+				}
+
+				if (rotatePart[LEFT_FOOT][0] >= 0.0f)
+				{
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+				}
+
+				/*if (rotatePart[LEFT_FOOT_TOES][0] >= 0.0f)
+				{
+					rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
+				}*/
+
+				if (rotatePart[LEFT_FOOT][2] >= 0.0f)
+				{
+					rotatePart[LEFT_FOOT][2] = 0.0f;
+				}
+
+				rotatePart[LEFT_UPPER_THIGH][2] -= 1.0f;
+
+				translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - 0.3, 0.0f);
+
+
+				if (rotatePart[LEFT_UPPER_THIGH][2] <= 0.0f)
+				{
+					rotatePart[LEFT_UPPER_THIGH][2] = 0.0f;
+					if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
 					{
-						rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
-						isOpen = true;
-						squat1 = false;
-						squat2 = false;
-						pause = true;
+						rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+						if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+						{
+							translatePart[CROTCH][1] = 0.0f;
+							rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+							isOpen = false;
+							squat1 = false;
+							squat2 = false;
+							pause = true;
+							jjCount++;
+							SoundEngine->play2D("../Assets/music/robotstep.mp3", false, false, true);
+						}
 					}
 				}
-			}
 
-			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
-			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
-			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
-			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
-			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
-			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
-			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
-			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+				rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
+				rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+				rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
+				rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+				rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
+			}
 		}
+		jjSaveStop = false;
 	}
 	else
 	{
-		if (pause)
-		{
-			Sleep(300);
-		}
-		pause = false;
-		
-
-		if (!squat1)
-		{
-			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
-			rotatePart[LEFT_LOWER_ARM][1] -= 5.0f;
-			rotatePart[LEFT_LOWER_ARM][0] += 10.0f;
-
-			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] += 3.0f;
-
-			if (rotatePart[LEFT_LOWER_ARM][0] >= 0.0f)
-			{
-				rotatePart[LEFT_LOWER_ARM][0] = 0.0f;
-			}
-
-			if (rotatePart[LEFT_LOWER_THIGH][0] >= 15.0f)
-			{
-				rotatePart[LEFT_LOWER_THIGH][0] = 15.0f;
-				if (rotatePart[LEFT_UPPER_THIGH][0] <= -10.0f)
-				{
-					rotatePart[LEFT_UPPER_THIGH][0] = -10.0f;
-					squat1 = true;
-				}
-			}
-
-			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
-			rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
-			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
-			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
-			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
-			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
-		}
-		else if (!squat2)
-		{
-			rotatePart[LEFT_UPPER_ARM][2] -= 10.0f;
-			rotatePart[LEFT_LOWER_ARM][1] -= 10.0f;
-			rotatePart[LEFT_UPPER_THIGH][0] += 1.0f;
-			rotatePart[LEFT_LOWER_THIGH][0] -= 3.0f;
-			rotatePart[LEFT_FOOT][0] += 10.0f;
-			rotatePart[LEFT_FOOT][2] += 3.0f;
-			rotatePart[LEFT_FOOT_TOES][0] += 5.0f;
-
-			if (rotatePart[LEFT_UPPER_ARM][2] <= 0.0f)
-			{
-				rotatePart[LEFT_UPPER_ARM][2] = 0.0f;
-			}
-
-			if (rotatePart[LEFT_LOWER_ARM][1] <= 0.0f)
-			{
-				rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT][0] >= 0.0f)
-			{
-				rotatePart[LEFT_FOOT][0] = 0.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT_TOES][0] >= 0.0f)
-			{
-				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
-			}
-
-			if (rotatePart[LEFT_FOOT][2] >= 0.0f)
-			{
-				rotatePart[LEFT_FOOT][2] = 0.0f;
-			}
-
-			rotatePart[LEFT_UPPER_THIGH][2] -= 1.0f;
-
-			if (rotatePart[LEFT_UPPER_THIGH][2] <= 0.0f)
-			{
-				rotatePart[LEFT_UPPER_THIGH][2] = 0.0f;
-				if (rotatePart[LEFT_UPPER_THIGH][0] >= 0.0f)
-				{
-					rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
-					if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
-					{
-						rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
-						isOpen = false;
-						squat1 = false;
-						squat2 = false;
-						pause = true;
-					}
-				}
-			}
-
-			rotatePart[RIGHT_UPPER_ARM][2] = -rotatePart[LEFT_UPPER_ARM][2];
-			rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
-			rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
-			rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
-			rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
-			rotatePart[RIGHT_FOOT][2] = -rotatePart[LEFT_FOOT][2];
-			rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
-			rotatePart[RIGHT_UPPER_THIGH][2] = -rotatePart[LEFT_UPPER_THIGH][2];
-		}
+		jjSaveStop = true;
 	}
 }
 
@@ -1892,7 +2624,7 @@ void gangnamStyle()
 			rotatePart[LEFT_LOWER_ARM][1] = -90.0f;
 			// rotatePart[LEFT_LOWER_ARM][2] = -30.0f;
 			setReadyGS = true;
-			Sleep(300);
+			
 		}
 
 		rotatePart[RIGHT_UPPER_ARM][0] = 0.7 * rotatePart[LEFT_UPPER_ARM][0];
@@ -1905,11 +2637,14 @@ void gangnamStyle()
 	else
 	{
 		float currentTime = getTime();
-		rotatePart[LEFT_PALM][2] = sin((currentTime - startTime) * 2 * 3.14 / 0.6) * 30.0f;
-		rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
+		/*rotatePart[LEFT_PALM][2] = sin((currentTime - startTime) * 2 * 3.14 / 0.6) * 30.0f;
+		rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];*/
 
 		float absSpeed = 2.0f;
 		float absMaxRot = 5.0f;
+		float handBend = 30.0f;
+		float handTarget = 60.0f;
+		float jumpVal = 0.1f;
 
 		if (jumpLeft)
 		{
@@ -1927,13 +2662,15 @@ void gangnamStyle()
 
 			if (isJump)
 			{
+				translatePart[CROTCH][1] += jumpVal;
 				bool leftReady = false;
 				bool rightReady = false;
-				cout << "isjump" << endl;
 				float pivotSpeed = speed1;
 				float pivotTarget = -40.0f;
 				float pivotSpeed2 = speed2;
 				float pivotTarget2 = 10.0f;
+				rotatePart[LEFT_PALM][2] = clampValMax(rotatePart[LEFT_PALM][2] + dGangnamFunction(pivotSpeed, pivotTarget, handTarget), handBend);
+				rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
 				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
 				rotatePart[LEFT_UPPER_THIGH][1] += dGangnamFunction(pivotSpeed, pivotTarget, 50.0f);
 				rotatePart[LEFT_UPPER_THIGH][2] += dGangnamFunction(pivotSpeed, pivotTarget, 20.0f);
@@ -1967,6 +2704,7 @@ void gangnamStyle()
 			}
 			else
 			{
+				translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - jumpVal, 0.0f);
 				bool leftReady = false;
 				bool rightReady = false;
 				// return to ori pos
@@ -1974,6 +2712,8 @@ void gangnamStyle()
 				float pivotTarget = -15.0f;
 				float pivotSpeed2 = speed2;
 				float pivotTarget2 = -15.0f;
+				rotatePart[LEFT_PALM][2] = clampValMin(rotatePart[LEFT_PALM][2] - dGangnamFunction(pivotSpeed, pivotTarget, handTarget), -handBend);
+				rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
 				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
 				rotatePart[LEFT_UPPER_THIGH][1] = clampValMin(rotatePart[LEFT_UPPER_THIGH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), 20.0f);
 				rotatePart[LEFT_UPPER_THIGH][2] = clampValMin(rotatePart[LEFT_UPPER_THIGH][2] - dGangnamFunction(pivotSpeed, pivotTarget, 15.0f), 0.0f);
@@ -2009,11 +2749,21 @@ void gangnamStyle()
 					counter++;
 					isJump = true; // true
 				}
+
+				if (leftReady && rightReady)
+				{
+					gsSaveStop = true;
+				}
+				else
+				{
+					gsSaveStop = false;
+				}
 			}
 		}
 		else
 		{
 			rotatePart[ABS][1] = clampValMin(rotatePart[ABS][1] - absSpeed, -absMaxRot);
+			rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
 			//cout << rotatePart[LEFT_UPPER_THIGH][0] << " " << rotatePart[LEFT_UPPER_THIGH][1] << " " << rotatePart[LEFT_LOWER_THIGH][0]<< endl;
 			// jump right
 			/*rotatePart[RIGHT_UPPER_THIGH][0] = -40.0f;
@@ -2028,13 +2778,14 @@ void gangnamStyle()
 
 			if (isJump)
 			{
+				translatePart[CROTCH][1] += jumpVal;
 				bool leftReady = false;
 				bool rightReady = false;
-				cout << "isjump" << endl;
 				float pivotSpeed = speed1;
 				float pivotTarget = -40.0f;
 				float pivotSpeed2 = speed2;
 				float pivotTarget2 = 10.0f;
+				rotatePart[LEFT_PALM][2] = clampValMax(rotatePart[LEFT_PALM][2] + dGangnamFunction(pivotSpeed, pivotTarget, handTarget), handBend);
 				rotatePart[RIGHT_UPPER_THIGH][0] -= pivotSpeed;
 				rotatePart[RIGHT_UPPER_THIGH][1] -= dGangnamFunction(pivotSpeed, pivotTarget, 50.0f);
 				rotatePart[RIGHT_UPPER_THIGH][2] -= dGangnamFunction(pivotSpeed, pivotTarget, 20.0f);
@@ -2068,6 +2819,7 @@ void gangnamStyle()
 			}
 			else
 			{
+				translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - jumpVal, 0.0f);
 				bool leftReady = false;
 				bool rightReady = false;
 				// return to ori pos
@@ -2075,6 +2827,8 @@ void gangnamStyle()
 				float pivotTarget = -15.0f;
 				float pivotSpeed2 = speed2;
 				float pivotTarget2 = -15.0f;
+				rotatePart[LEFT_PALM][2] = clampValMin(rotatePart[LEFT_PALM][2] - dGangnamFunction(pivotSpeed, pivotTarget, handTarget), -handBend);
+				rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
 				rotatePart[RIGHT_UPPER_THIGH][0] += pivotSpeed;
 				rotatePart[RIGHT_UPPER_THIGH][1] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 35.0f), -20.0f);
 				rotatePart[RIGHT_UPPER_THIGH][2] = clampValMax(rotatePart[RIGHT_UPPER_THIGH][2] + dGangnamFunction(pivotSpeed, pivotTarget, 15.0f), 0.0f);
@@ -2110,6 +2864,15 @@ void gangnamStyle()
 					counter++;
 					isJump = true; // true
 				}
+
+				if (leftReady && rightReady)
+				{
+					gsSaveStop = true;
+				}
+				else
+				{
+					gsSaveStop = false;
+				}
 			}
 
 		}
@@ -2123,6 +2886,7 @@ void moonWalk()
 		// set to start position
 		// rotatePart[LEFT_LOWER_THIGH][0] = 40.0f;
 		// rotatePart[LEFT_FOOT_TOES][0] = -30.0f;
+
 
 		rotatePart[LEFT_LOWER_THIGH][0] += 1.0f;
 		rotatePart[LEFT_FOOT_TOES][0] -= 0.75f;
@@ -2139,38 +2903,847 @@ void moonWalk()
 	}
 	else
 	{
-		if (!l_slide)
-		{
-			// left leg move front
-			/*rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
-			rotatePart[LEFT_FOOT][0] = 40.0f;*/
-
-			rotatePart[LEFT_UPPER_THIGH][0] -= 1.0F;
-			rotatePart[LEFT_FOOT][0] += 0.8f;
-
-			if (rotatePart[LEFT_UPPER_THIGH][0] <= -40.0f)
-			{
-				rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
-				rotatePart[LEFT_FOOT][0] = 40.0f;
+		if (speedDirection > 0) {
+			if ((translatePart[CROTCH][2] + speedDirection) < TRANSLATEZLIMIT) {
+				translatePart[CROTCH][2] += speedDirection;
 			}
 
-			/*rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
-			rotatePart[RIGHT_FOOT][0] = -30.0f;*/
+		}
+		else{
+			if ((translatePart[CROTCH][2] + speedDirection) > -TRANSLATEZLIMIT) {
+				translatePart[CROTCH][2] += speedDirection;
+			}
+		}
+		//when in between 0 and 180, don't change
+		if (mwcount % 10 == 0)
+		{
 
-			rotatePart[RIGHT_UPPER_THIGH][0] += 0.8f;
-			rotatePart[RIGHT_FOOT][0] -= 0.6f;
-
-			if (rotatePart[RIGHT_UPPER_THIGH][0] >= 40.0f)
+			rotatePart[CROTCH][1] = clampValMin(rotatePart[CROTCH][1] - spinSpeed, 0.0f);
+			speedDirection = -0.2f;
+		}
+		else if (mwcount % 5 == 0)
+		{
+			rotatePart[CROTCH][1] = clampValMax(rotatePart[CROTCH][1] + spinSpeed, 180.0f);
+			speedDirection = 0.2f;
+		}
+		float currentTime = getTime();
+		float x = clampValMin(sin((currentTime - startTime) * 2 * 3.14 / 2) * 30.0f, 0.0f);
+		rotatePart[HEAD][0] = -x;
+		rotatePart[NECK][0] = x;
+		if (!l_slide)
+		{
+			if (!moon_reset)
 			{
-				rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
-				rotatePart[RIGHT_FOOT][0] = -30.0f;
+				bool leftReady = false;
+				bool rightReady = false;
+				// left leg move front
+				/*rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
+				rotatePart[LEFT_FOOT][0] = 40.0f;*/
+
+				float pivotSpeed = 1.0f;
+				float pivotTarget = -25.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
+				rotatePart[LEFT_FOOT][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 40.0f);
+				rotatePart[LEFT_FOOT_TOES][0] = clampValMax(rotatePart[LEFT_FOOT_TOES][0] - dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), -50.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_FOOT][0] = 40.0f;
+					rotatePart[LEFT_FOOT_TOES][0] = -50.0f;
+					leftReady = true;
+				}
+
+				float pivotSpeed2 = 1.0f;
+				float pivotTarget2 = 30.0f;
+				/*rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
+				rotatePart[RIGHT_FOOT][0] = -30.0f;*/
+
+				rotatePart[RIGHT_UPPER_THIGH][0] += pivotSpeed2;
+				rotatePart[RIGHT_FOOT][0] = clampValMin(rotatePart[RIGHT_FOOT][0] - dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), -30.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] >= pivotTarget2 || rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					// rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget2;
+					// rotatePart[RIGHT_FOOT][0] = -30.0f;
+					rightReady = true;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_ARM][0];
+
+				if (leftReady && rightReady)
+				{
+					moon_reset = true;
+				}
+			}
+			else
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				// reset
+				/*rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+				rotatePart[LEFT_FOOT][0] = 0.0f;
+				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;*/
+
+				float pivotSpeed = 1.7f;
+				float pivotTarget = 0.0f;
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+				rotatePart[LEFT_FOOT][0] = clampValMin(rotatePart[LEFT_FOOT][0] - dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+				rotatePart[LEFT_FOOT_TOES][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+					rotatePart[LEFT_FOOT_TOES][0] = 0.0f;
+					leftReady = true;
+				}
+
+				/*rotatePart[RIGHT_UPPER_THIGH][0] = 0.0f;
+				rotatePart[RIGHT_LOWER_THIGH][0] = 40.0f;
+				rotatePart[RIGHT_FOOT][0] = 0.0f;
+				rotatePart[RIGHT_FOOT_TOES][0] = -30.0f;*/
+
+				float pivotSpeed2 = 1.7f;
+				float pivotTarget2 = 0.0f; // + 30.0f
+				rotatePart[RIGHT_UPPER_THIGH][0] -= pivotSpeed2;
+				rotatePart[RIGHT_LOWER_THIGH][0] = clampValMax(rotatePart[RIGHT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 40.0f), 40.0f);
+				rotatePart[RIGHT_FOOT][0] = clampValMax(rotatePart[RIGHT_FOOT][0] + dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 30.0f), 0.0f);
+				rotatePart[RIGHT_FOOT_TOES][0] = clampValMin(rotatePart[RIGHT_FOOT][0] - dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 30.0f), -30.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] <= pivotTarget2)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[RIGHT_LOWER_THIGH][0] = 40.0f;
+					rotatePart[RIGHT_FOOT][0] = 0.0f;
+					rotatePart[RIGHT_FOOT_TOES][0] = -30.0f;
+					rightReady = true;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_ARM][0];
+
+				if (leftReady && rightReady)
+				{
+					l_slide = true;
+					moon_reset = false;
+					mwcount++;
+				}
+
+				if (leftReady && rightReady)
+				{
+					mwSaveStop = true;
+				}
+				else
+				{
+					mwSaveStop = false;
+				}
+			}
+		}
+		else
+		{
+			if (!moon_reset)
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				// left leg move front
+				/*rotatePart[LEFT_UPPER_THIGH][0] = -45.0f;
+				rotatePart[LEFT_FOOT][0] = 40.0f;*/
+
+				float pivotSpeed = 1.0f;
+				float pivotTarget = -25.0f;
+				rotatePart[RIGHT_UPPER_THIGH][0] -= pivotSpeed;
+				rotatePart[RIGHT_FOOT][0] = clampValMax(rotatePart[RIGHT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 40.0f);
+				rotatePart[RIGHT_FOOT_TOES][0] = clampValMax(rotatePart[RIGHT_FOOT_TOES][0] - dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), -50.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[RIGHT_FOOT][0] = 40.0f;
+					rotatePart[RIGHT_FOOT_TOES][0] = -50.0f;
+					leftReady = true;
+				}
+
+				float pivotSpeed2 = 1.0f;
+				float pivotTarget2 = 30.0f;
+				/*rotatePart[RIGHT_UPPER_THIGH][0] = 40.0f;
+				rotatePart[RIGHT_FOOT][0] = -30.0f;*/
+
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed2;
+				rotatePart[LEFT_FOOT][0] = clampValMin(rotatePart[LEFT_FOOT][0] - dGangnamFunction(pivotSpeed2, pivotTarget2, 30.0f), -30.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget2 || rotatePart[RIGHT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					// rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget2;
+					// rotatePart[LEFT_FOOT][0] = -30.0f;
+					rightReady = true;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_ARM][0];
+
+				if (leftReady && rightReady)
+				{
+					moon_reset = true;
+				}
+			}
+			else
+			{
+				bool leftReady = false;
+				bool rightReady = false;
+				// reset
+				/*rotatePart[LEFT_UPPER_THIGH][0] = 0.0f;
+				rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+				rotatePart[LEFT_FOOT][0] = 0.0f;
+				rotatePart[LEFT_FOOT_TOES][0] = 0.0f;*/
+
+				float pivotSpeed = 1.7f;
+				float pivotTarget = 0.0f;
+				rotatePart[RIGHT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[RIGHT_LOWER_THIGH][0] = clampValMin(rotatePart[RIGHT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+				rotatePart[RIGHT_FOOT][0] = clampValMin(rotatePart[RIGHT_FOOT][0] - dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+				rotatePart[RIGHT_FOOT_TOES][0] = clampValMax(rotatePart[RIGHT_FOOT_TOES][0] + dGangnamFunction(pivotSpeed, pivotTarget + 25.0f, 40.0f), 0.0f);
+
+				if (rotatePart[RIGHT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					rotatePart[RIGHT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[RIGHT_LOWER_THIGH][0] = 0.0f;
+					rotatePart[RIGHT_FOOT][0] = 0.0f;
+					rotatePart[RIGHT_FOOT_TOES][0] = 0.0f;
+					leftReady = true;
+				}
+
+				/*rotatePart[RIGHT_UPPER_THIGH][0] = 0.0f;
+				rotatePart[RIGHT_LOWER_THIGH][0] = 40.0f;
+				rotatePart[RIGHT_FOOT][0] = 0.0f;
+				rotatePart[RIGHT_FOOT_TOES][0] = -30.0f;*/
+
+				float pivotSpeed2 = 1.7f;
+				float pivotTarget2 = 0.0f; // + 30.0f
+				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed2;
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 40.0f), 40.0f);
+				rotatePart[LEFT_FOOT][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 30.0f), 0.0f);
+				rotatePart[LEFT_FOOT_TOES][0] = clampValMin(rotatePart[LEFT_FOOT_TOES][0] - dGangnamFunction(pivotSpeed2, pivotTarget2 + 30.0f, 30.0f), -30.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget2)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget2;
+					rotatePart[LEFT_LOWER_THIGH][0] = 40.0f;
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+					rotatePart[LEFT_FOOT_TOES][0] = -30.0f;
+					rightReady = true;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = -rotatePart[LEFT_UPPER_ARM][0];
+
+				if (leftReady && rightReady)
+				{
+					l_slide = false;
+					moon_reset = false;
+					mwcount++;
+
+				}
+
+				if (leftReady && rightReady)
+				{
+					mwSaveStop = true;
+				}
+				else
+				{
+					mwSaveStop = false;
+				}
 			}
 		}
 	}
 }
 
-void tesMode()
+void squat()
 {
+	/*rotatePart[ABS][0] = 20.0f;
+	rotatePart[LEFT_UPPER_ARM][0] = -90.0f;
+	rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+
+	rotatePart[LEFT_UPPER_THIGH][0] = -55.0f;
+	rotatePart[LEFT_LOWER_THIGH][0] = 100.0f;
+	rotatePart[LEFT_FOOT][0] = -35.0f;
+	rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+	rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+	rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+	translatePart[CROTCH][1] = -3.5f;*/
+	float crotch = 3.5f;
+	float crotch_s = 4.0f;
+
+	if (!isSquatReady)
+	{
+		rotatePart[LEFT_UPPER_THIGH][0] -= 1.0f;
+		rotatePart[LEFT_UPPER_THIGH][1] += 1.3f;
+		rotatePart[LEFT_LOWER_THIGH][0] += 1.3f;
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= -15.0f)
+		{
+			rotatePart[LEFT_UPPER_THIGH][0] = -15.0f;
+			rotatePart[LEFT_UPPER_THIGH][1] = 20.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] = 20.0f;
+			isSquatReady = true;
+			Sleep(300);
+		}
+
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_UPPER_THIGH][1] = -rotatePart[LEFT_UPPER_THIGH][1];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+	}
+	else
+	{
+		if (squatCount != 5)
+		{
+			if (isGoDown)
+			{
+				float pivotSpeed = 2.0f;
+				float pivotTarget = 100.0f;
+
+				translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, crotch_s), -crotch);
+
+				rotatePart[ABS][0] = clampValMax(rotatePart[ABS][0] + dGangnamFunction(pivotSpeed, pivotTarget, 25.0f), 20.0f);
+				rotatePart[LEFT_UPPER_THIGH][0] = clampValMin(rotatePart[LEFT_UPPER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 55.0f), -55.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] += pivotSpeed;
+				rotatePart[LEFT_FOOT][0] = clampValMin(rotatePart[LEFT_FOOT][0] - dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), -40.0f);
+
+				if (rotatePart[LEFT_LOWER_THIGH][0] >= 100.0f)
+				{
+					rotatePart[ABS][0] = 20.0f;
+					rotatePart[LEFT_UPPER_THIGH][0] = -55.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 100.0f;
+					rotatePart[LEFT_FOOT][0] = -40.0f;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), -90.0f);
+				rotatePart[LEFT_LOWER_ARM][1] = clampValMin(rotatePart[LEFT_LOWER_ARM][1] - dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), -90.0f);
+
+				if (rotatePart[LEFT_UPPER_ARM][0] <= -90.0f)
+				{
+					rotatePart[LEFT_UPPER_ARM][0] = -90.0f;
+					rotatePart[LEFT_LOWER_ARM][1] = -90.0f;
+					isGoDown = false;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+			}
+			else
+			{
+				float pivotSpeed = 2.0f;
+				float pivotTarget = 100.0f;
+				translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget, crotch_s + 0.5f), 0.0f);
+				rotatePart[ABS][0] = clampValMin(rotatePart[ABS][0] - dGangnamFunction(pivotSpeed, pivotTarget, 30.0f), 0.0f);
+				rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 50.0f), -15.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] -= pivotSpeed;
+				rotatePart[LEFT_FOOT][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 0.0f);
+
+				if (rotatePart[LEFT_LOWER_THIGH][0] <= 20.0f)
+				{
+					rotatePart[ABS][0] = 0.0f;
+					rotatePart[LEFT_UPPER_THIGH][0] = -15.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 20.0f;
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+				}
+
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), 0.0f);
+				rotatePart[LEFT_LOWER_ARM][1] = clampValMax(rotatePart[LEFT_LOWER_ARM][1] + dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), 0.0f);
+
+				if (rotatePart[LEFT_UPPER_ARM][0] >= 0.0f)
+				{
+					rotatePart[LEFT_UPPER_ARM][0] = 0.0f;
+					rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
+					isGoDown = true;
+					Sleep(300);
+					squatCount++;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+
+				squatSaveStop = false;
+			}
+		}
+		else
+		{
+			squatSaveStop = true;
+		}
+	}
 
 }
 
+void sitUp()
+{
+	if (!isSitUpready)
+	{
+		/*rotatePart[LEFT_UPPER_THIGH][0] = -130.0f;
+		rotatePart[LEFT_LOWER_THIGH][0] = 130.0f;
+		rotatePart[LEFT_FOOT][0] = 10.0f;*/
+		// translatePart[CROTCH][1] = -8.0f;
+
+		float pivotSpeed = 5.0f;
+		float pivotTarget = -140.0f;
+
+		rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
+		rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 140.0f), 140.0f);
+		rotatePart[LEFT_FOOT][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), 10.0f);
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] >= -40.0f)
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 5.0f), -8.0f);
+		}
+		else if (rotatePart[LEFT_UPPER_THIGH][0] <= -50.0f)
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), -8.0f);
+		}
+		else
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 3.0f), -8.0f);
+		}
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+		{
+			// rotatePart[CROTCH][0] = pivotTarget;
+			rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+			rotatePart[LEFT_LOWER_THIGH][0] = 140.0f;
+			rotatePart[LEFT_FOOT][0] = 10.0f;
+			isSitUpready = true;
+		}
+
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+		rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+	}
+	else if (!isSitUpready2)
+	{
+		/*rotatePart[LEFT_UPPER_THIGH][0] = -60.0f;
+		rotatePart[LEFT_LOWER_THIGH][0] = 140.0f;
+		rotatePart[LEFT_UPPER_ARM][0] = 90.0f;*/
+
+		float pivotSpeed = 3.0f;
+		float pivotTarget = -90.0f;
+
+		translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 5.0f), -9.0f);
+
+		rotatePart[CROTCH][0] -= pivotSpeed;
+		rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), -40.0f);
+		rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 30.0f), 110.0f);
+		rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 70.0f), -70.0f);
+		rotatePart[LEFT_UPPER_ARM][1] = clampValMax(rotatePart[LEFT_UPPER_ARM][1] + dGangnamFunction(pivotSpeed, pivotTarget, 50.0f), 50.0f);
+		rotatePart[LEFT_LOWER_ARM][0] = clampValMin(rotatePart[LEFT_LOWER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 150.0f), -150.0f);
+		rotatePart[LEFT_LOWER_ARM][1] = clampValMin(rotatePart[LEFT_LOWER_ARM][1] - dGangnamFunction(pivotSpeed, pivotTarget, 20.0f), -20.0f);
+
+
+
+		if (rotatePart[CROTCH][0] <= pivotTarget)
+		{
+			rotatePart[CROTCH][0] = -90.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] = -40.0f;
+			rotatePart[LEFT_LOWER_THIGH][0] = 110.0f;
+			rotatePart[LEFT_UPPER_ARM][0] = -90.0f;
+			rotatePart[LEFT_LOWER_ARM][0] = -150.0f;
+			isSitUpready2 = true;
+		}
+
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+		rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+
+		rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+		rotatePart[RIGHT_UPPER_ARM][1] = -rotatePart[LEFT_UPPER_ARM][1];
+		rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+		rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+	}
+	else
+	{
+		if (sleepOnce)
+		{
+			Sleep(300);
+			sleepOnce = !sleepOnce;
+		}
+
+		if (times != 5)
+		{
+			if (isUP)
+			{
+				float pivotSpeed = 1.5f;
+				float pivotTarget = -50.0f;
+
+				rotatePart[CROTCH][0] += pivotSpeed;
+				rotatePart[LEFT_UPPER_THIGH][0] = clampValMin(rotatePart[LEFT_UPPER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 55.0f), -85.0f);
+				rotatePart[ABS][0] = clampValMax(rotatePart[ABS][0] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 20.0f);
+				rotatePart[UPPER_BODY][0] = clampValMax(rotatePart[UPPER_BODY][0] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 20.0f);
+
+
+				if (rotatePart[CROTCH][0] >= pivotTarget)
+				{
+					rotatePart[CROTCH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][0] = -85.0f;
+					rotatePart[ABS][0] = 20.0f;
+					rotatePart[UPPER_BODY][0] = 20.0f;
+					isUP = false;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			}
+			else
+			{
+				float pivotSpeed = 1.0f;
+				float pivotTarget = -90.0f;
+
+				rotatePart[CROTCH][0] -= pivotSpeed;
+				rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 110.0f), -40.0f);
+				rotatePart[ABS][0] = clampValMin(rotatePart[ABS][0] - dGangnamFunction(pivotSpeed, pivotTarget, 50.0f), 0.0f);
+				rotatePart[UPPER_BODY][0] = clampValMin(rotatePart[UPPER_BODY][0] - dGangnamFunction(pivotSpeed, pivotTarget, 50.0f), 0.0f);
+
+				if (rotatePart[CROTCH][0] <= pivotTarget)
+				{
+					rotatePart[CROTCH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][0] = -40.0f;
+					rotatePart[ABS][0] = 0.0f;
+					rotatePart[UPPER_BODY][0] = 0.0f;
+					isUP = true;
+					times++;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			}
+		}
+		else
+		{
+			if (!isDone)
+			{
+				float pivotSpeed = 3.0f;
+				float pivotTarget = 0.0f;
+
+				rotatePart[CROTCH][0] += pivotSpeed;
+				translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 90.0f, 5.0f), -8.0f);
+				rotatePart[LEFT_UPPER_THIGH][0] = clampValMin(rotatePart[LEFT_UPPER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 90.0f, 100.0f), -140.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget + 90.0f, 30), 140.0f);
+				rotatePart[LEFT_FOOT][0] = clampValMin(rotatePart[LEFT_FOOT][0] - dGangnamFunction(pivotSpeed, pivotTarget + 90.0f, 10), 0.0f);
+
+				if (rotatePart[CROTCH][0] >= pivotTarget)
+				{
+					rotatePart[CROTCH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][0] = -140.0f;
+					rotatePart[LEFT_LOWER_THIGH][0] = 140.0f;
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+					isDone = true;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+			}
+			else if (!isDone2)
+			{
+				float pivotSpeed = 4.0f;
+				float pivotTarget = 0.0f;
+
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 140.0f), 0.0f);
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 100.0f), 0.0f);
+				rotatePart[LEFT_UPPER_ARM][1] = clampValMin(rotatePart[LEFT_UPPER_ARM][1] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 50.0f), 0.0f);
+				rotatePart[LEFT_LOWER_ARM][0] = clampValMax(rotatePart[LEFT_LOWER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 200.0f), 0.0f);
+				rotatePart[LEFT_LOWER_ARM][1] = clampValMax(rotatePart[LEFT_LOWER_ARM][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 20.0f), 0.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= -40.0f)
+				{
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 5.0f), 0.0f);
+				}
+				else if (rotatePart[LEFT_UPPER_THIGH][0] <= -50.0f)
+				{
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 10.0f), 0.0f);
+				}
+				else
+				{
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 3.0f), 0.0f);
+				}
+
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+					rotatePart[LEFT_UPPER_ARM][0] = 0.0f;
+					rotatePart[LEFT_LOWER_ARM][0] = 0.0f;
+					rotatePart[LEFT_UPPER_ARM][1] = 0.0f;
+					rotatePart[LEFT_LOWER_ARM][1] = 0.0f;
+					isDone2 = true;
+					suSaveStop = true;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_UPPER_ARM][1] = -rotatePart[LEFT_UPPER_ARM][1];
+				rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+				rotatePart[RIGHT_LOWER_ARM][1] = -rotatePart[LEFT_LOWER_ARM][1];
+
+			}
+		}
+	}
+}
+
+void pushUp()
+{
+	if (!isPushUpready)
+	{
+		/*rotatePart[LEFT_UPPER_THIGH][0] = -130.0f;
+		rotatePart[LEFT_LOWER_THIGH][0] = 130.0f;
+		rotatePart[LEFT_FOOT][0] = 10.0f;
+		rotatePart[LEFT_PALM][0] = -45.0f;
+		rotatePart[LEFT_PALM][2] = 90.0f;*/
+		float pivotSpeed = 5.0f;
+		float pivotTarget = -140.0f;
+
+		rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
+		rotatePart[CROTCH][0] = clampValMax(rotatePart[CROTCH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 80.0f), 80.0f);
+		rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 140.0f), 140.0f);
+		rotatePart[LEFT_FOOT][0] = clampValMax(rotatePart[LEFT_FOOT][0] + dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), 10.0f);
+		rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 80.0f), -80.0f);
+		rotatePart[LEFT_PALM][0] = clampValMin(rotatePart[LEFT_PALM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 45.0f), -45.0f);
+		rotatePart[LEFT_PALM][2] = clampValMax(rotatePart[LEFT_PALM][2] + dGangnamFunction(pivotSpeed, pivotTarget, 90.0f), 90.0f);
+
+		// translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 7.0f), -6.0f);
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] >= -40.0f)
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 3.0f), -6.0f);
+		}
+		else if (rotatePart[LEFT_UPPER_THIGH][0] <= -50.0f)
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 7.0f), -6.0f);
+		}
+		else
+		{
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 1.0f), -6.0f);
+		}
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+		{
+			// rotatePart[CROTCH][0] = pivotTarget;
+			rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+			rotatePart[LEFT_LOWER_THIGH][0] = 140.0f;
+			rotatePart[LEFT_FOOT][0] = 10.0f;
+			rotatePart[LEFT_PALM][0] = -45.0f;
+			rotatePart[LEFT_PALM][2] = 90.0f;
+			isPushUpready = true;
+		}
+
+		rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+		rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+		rotatePart[RIGHT_PALM][0] = rotatePart[LEFT_PALM][0];
+		rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
+	}
+	else if (!isPushUpready2)
+	{
+		float pivotSpeed = 3.0f;
+		float pivotTarget = -5.0f;
+
+		// rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
+		rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 140.0f + 50.0f), -5.0f);
+		rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 140.0f), 0.0f);
+		rotatePart[LEFT_FOOT_TOES][0] = clampValMin(rotatePart[LEFT_FOOT_TOES][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 50.0f), -60.0f);
+
+		if (rotatePart[LEFT_UPPER_THIGH][0] <= -80.0f)
+		{
+			rotatePart[CROTCH][0] = clampValMax(rotatePart[CROTCH][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 140.0f), 250.0f);
+			rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 110.0f), -170.0f);
+			translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 10.0f), -2.0f);
+		}
+		else
+		{
+			rotatePart[CROTCH][0] = clampValMin(rotatePart[CROTCH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 130.0f), 80.0f);
+			rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 100.0f), -80.0f);
+			translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 9.0f), -5.9);
+		}
+
+		// if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget)
+		if (rotatePart[LEFT_LOWER_THIGH][0] <= 0.0f)
+		{
+			rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+			rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+			rotatePart[LEFT_UPPER_ARM][0] = -80.0f;
+			rotatePart[LEFT_UPPER_THIGH][0] = -5.0f;
+			rotatePart[CROTCH][0] = 80.0f;
+			translatePart[CROTCH][1] = -5.9f;
+			isPushUpready2 = true;
+		}
+
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+		rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+		rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+		rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+	}
+	else
+	{
+		if (pTimes != 5)
+		{
+			if (pushDown)
+			{
+				float pivotSpeed = 0.3f;
+				float pivotTarget = 10.0f;
+				rotatePart[CROTCH][0] += pivotSpeed;
+				/*rotatePart[LEFT_UPPER_ARM][0] = -10.0f;
+				rotatePart[LEFT_LOWER_ARM][0] = -120.0f;
+				rotatePart[LEFT_PALM][1] = -40.0f;*/
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget, 70.0f), -10.0f);
+				rotatePart[LEFT_LOWER_ARM][0] = clampValMin(rotatePart[LEFT_LOWER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 120.0f), -120.0f);
+				rotatePart[LEFT_PALM][1] = clampValMin(rotatePart[LEFT_PALM][1] - dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), -40.0f);
+
+				if (rotatePart[LEFT_UPPER_ARM][0] <= -45.0f)
+				{
+					translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 0.5f), -8.0f);
+					rotatePart[LEFT_UPPER_THIGH][0] = clampValMin(rotatePart[LEFT_UPPER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 8.0f), -10.0f);
+				}
+				else
+				{
+					translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 4.0f), -8.0f);
+					rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 8.0f), -5.0f);;
+				}
+
+				if (rotatePart[CROTCH][0] >= 90.0f)
+				{
+					rotatePart[CROTCH][0] = 90.0f;
+					translatePart[CROTCH][1] = -8.0f;
+					rotatePart[LEFT_UPPER_ARM][0] = -10.0f;
+					rotatePart[LEFT_LOWER_ARM][0] = -120.0f;
+					rotatePart[LEFT_PALM][1] = -40.0f;
+					pushDown = false;
+				}
+
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+				rotatePart[RIGHT_PALM][1] = -rotatePart[LEFT_PALM][1];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			}
+			else
+			{
+				float pivotSpeed = 0.2f;
+				float pivotTarget = 10.0f;
+				rotatePart[CROTCH][0] -= pivotSpeed;
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 70.0f), -80.0f);
+				rotatePart[LEFT_LOWER_ARM][0] = clampValMax(rotatePart[LEFT_LOWER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget, 120.0f), 0.0f);
+				rotatePart[LEFT_PALM][1] = clampValMax(rotatePart[LEFT_PALM][1] + dGangnamFunction(pivotSpeed, pivotTarget, 40.0f), 0.0f);
+
+				// translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 2.0f), -6.0f);
+				if (rotatePart[LEFT_UPPER_ARM][0] <= -45.0f)
+				{
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 0.5f), -5.7f);
+					rotatePart[LEFT_UPPER_THIGH][0] = clampValMax(rotatePart[LEFT_UPPER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 8.0f), -5.0f);
+				}
+				else
+				{
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 4.0f), -5.7f);
+					rotatePart[LEFT_UPPER_THIGH][0] = clampValMin(rotatePart[LEFT_UPPER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 8.0f), -10.0f);
+				}
+
+				if (rotatePart[CROTCH][0] <= 80.0f)
+				{
+					rotatePart[CROTCH][0] = 80.0f;
+					translatePart[CROTCH][1] = -5.7f;
+					pushDown = true;
+					pTimes++;
+				}
+
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_LOWER_ARM][0] = rotatePart[LEFT_LOWER_ARM][0];
+				rotatePart[RIGHT_PALM][1] = -rotatePart[LEFT_PALM][1];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+			}
+		}
+		else
+		{
+			if (!isPDone)
+			{
+				float pivotSpeed = 3.0f;
+				float pivotTarget = -140.0f;
+
+				rotatePart[LEFT_UPPER_THIGH][0] -= pivotSpeed;
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMax(rotatePart[LEFT_LOWER_THIGH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 140.0f), 140.0f);
+				rotatePart[LEFT_FOOT_TOES][0] = clampValMax(rotatePart[LEFT_FOOT_TOES][0] + dGangnamFunction(pivotSpeed, pivotTarget, 60.0f), 0.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] > -60.0f)
+				{
+					rotatePart[CROTCH][0] = clampValMax(rotatePart[CROTCH][0] + dGangnamFunction(pivotSpeed, pivotTarget, 140.0f), 250.0f);
+					rotatePart[LEFT_UPPER_ARM][0] = clampValMin(rotatePart[LEFT_UPPER_ARM][0] - dGangnamFunction(pivotSpeed, pivotTarget, 110.0f), -170.0f);
+					translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget, 10.0f), -2.0f);
+				}
+				else
+				{
+					rotatePart[CROTCH][0] = clampValMin(rotatePart[CROTCH][0] - dGangnamFunction(pivotSpeed, pivotTarget, 130.0f), 80.0f);
+					rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget, 100.0f), -80.0f);
+					translatePart[CROTCH][1] = clampValMin(translatePart[CROTCH][1] - dGangnamFunction(pivotSpeed, pivotTarget, 9.0f), -6.0f);
+				}
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] <= pivotTarget)
+				{
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_LOWER_THIGH][0] = 140.0f;
+					rotatePart[LEFT_UPPER_ARM][0] = -80.0f;
+					rotatePart[CROTCH][0] = 80.0f;
+					translatePart[CROTCH][1] = -6.0f;
+					isPDone = true;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_FOOT_TOES][0] = rotatePart[LEFT_FOOT_TOES][0];
+			}
+			else if (!isPDone2)
+			{
+				float pivotSpeed = 5.0f;
+				float pivotTarget = 0.0f;
+
+				rotatePart[LEFT_UPPER_THIGH][0] += pivotSpeed;
+				rotatePart[CROTCH][0] = clampValMin(rotatePart[CROTCH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 80.0f), 0.0f);
+				rotatePart[LEFT_LOWER_THIGH][0] = clampValMin(rotatePart[LEFT_LOWER_THIGH][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 140.0f), 0.0f);
+				rotatePart[LEFT_FOOT][0] = clampValMin(rotatePart[LEFT_FOOT][0] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 10.0f), 0.0f);
+				rotatePart[LEFT_UPPER_ARM][0] = clampValMax(rotatePart[LEFT_UPPER_ARM][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 80.0f), 0.0f);
+				rotatePart[LEFT_PALM][0] = clampValMax(rotatePart[LEFT_PALM][0] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 45.0f), 0.0f);
+				rotatePart[LEFT_PALM][2] = clampValMin(rotatePart[LEFT_PALM][2] - dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 90.0f), 0.0f);
+
+				translatePart[CROTCH][1] = clampValMax(translatePart[CROTCH][1] + dGangnamFunction(pivotSpeed, pivotTarget + 140.0f, 7.0f), 0.0f);
+
+				if (rotatePart[LEFT_UPPER_THIGH][0] >= pivotTarget)
+				{
+					// rotatePart[CROTCH][0] = pivotTarget;
+					rotatePart[LEFT_UPPER_THIGH][0] = pivotTarget;
+					rotatePart[LEFT_LOWER_THIGH][0] = 0.0f;
+					rotatePart[LEFT_FOOT][0] = 0.0f;
+					rotatePart[LEFT_PALM][0] = 0.0f;
+					rotatePart[LEFT_PALM][2] = 0.0f;
+					isPDone2 = true;
+					puSaveStop = true;
+				}
+
+				rotatePart[RIGHT_UPPER_THIGH][0] = rotatePart[LEFT_UPPER_THIGH][0];
+				rotatePart[RIGHT_LOWER_THIGH][0] = rotatePart[LEFT_LOWER_THIGH][0];
+				rotatePart[RIGHT_FOOT][0] = rotatePart[LEFT_FOOT][0];
+				rotatePart[RIGHT_PALM][0] = rotatePart[LEFT_PALM][0];
+				rotatePart[RIGHT_PALM][2] = -rotatePart[LEFT_PALM][2];
+				rotatePart[RIGHT_UPPER_ARM][0] = rotatePart[LEFT_UPPER_ARM][0];
+
+				
+			}
+		}
+	}
+}
