@@ -1,3 +1,5 @@
+Demo video is available on: https://www.linkedin.com/posts/bryan-constantine_opengl-animation-cplusplus-activity-6951943888383139840--YNz?utm_source=share&utm_medium=member_desktop
+
 The first project is NTUST Fundamentals of Computer Graphics which is focused Matrix Transformation to move robot obj
 
 This first project is done within 3 weeks, and is focused on loading OBJ and MTL files, 7 pre-assigned moves Animating by Manual Matrix Transformation, and also Lighting and Shadow calculation techniques using shaders. Here are each specific features and moves that are incorporated inside the demo program:
